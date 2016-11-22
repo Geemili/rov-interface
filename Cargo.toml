@@ -7,3 +7,4 @@ authors = ["geemili <minergeemili@gmail.com>"]
 serial = "0.3"
 sdl2 = "0.25"
 sdl2_ttf = "0.25"
+fomat-macros = "0.1"

@@ -2,6 +2,8 @@
 extern crate serial;
 extern crate sdl2;
 extern crate sdl2_ttf;
+#[macro_use]
+extern crate fomat_macros;
 
 use std::path::Path;
 use sdl2::pixels::Color;
@@ -28,7 +30,7 @@ fn main() {
             Err(e) => panic!("Can't enumerate joysticks. :( "),
         };
 
-        println!("{} joysticks available", available);
+        pintln!((available)" joysticks available");
 
         let mut joystick = None;
 
@@ -37,11 +39,11 @@ fn main() {
         for id in 0..available {
             match joystick_subsystem.open(id) {
                 Ok(c) => {
-                    println!("Success: opened \"{}\"", c.name());
+                    pintln!("Success: opened \""(c.name())"\"");
                     joystick = Some(c);
                     break;
                 }
-                Err(e) => println!("failed: {:?}", e),
+                Err(e) => pintln!("failed: "[e]),
             }
         }
 
@@ -53,7 +55,7 @@ fn main() {
         let mut buttons = [false; 9];
 
         let mut surface =
-            font.render(&format!("Axis 0: {}", axis[0])).solid(Color::RGB(255, 255, 255)).unwrap();
+            font.render(&fomat!("Axis 0: "(axis[0]))).solid(Color::RGB(255, 255, 255)).unwrap();
         let mut texture = renderer.create_texture_from_surface(&surface).unwrap();
 
         for event in sdl_context.event_pump().unwrap().wait_iter() {
@@ -74,7 +76,7 @@ fn main() {
                 Event::JoyButtonDown { button_idx, .. } => buttons[button_idx as usize] = true,
                 Event::JoyButtonUp { button_idx, .. } => buttons[button_idx as usize] = false,
                 Event::JoyHatMotion { hat_idx, state, .. } => {
-                    println!("Hat {} moved to {:?}", hat_idx, state)
+                    pintln!("Hat "(hat_idx)" moved to "[state])
                 }
                 Event::Quit { .. } => break,
                 _ => (),
@@ -114,7 +116,7 @@ fn main() {
         }
     }
     if let Some(port) = std::env::args().skip(1).next() {
-        println!("Writing to port {:?}", port);
+        pintln!("Writing to port "(port));
         run(String::from(port.trim())).expect("Error running");
     }
 }
@@ -155,9 +157,9 @@ fn run(port_name: String) -> Result<(), serial::Error> {
         // Read bytes
         let bytes_read = port.read(&mut buffer).expect("Couldn't read");
         for i in 0..bytes_read {
-            print!("{} ", buffer[i] as char);
+            pint!((buffer[i] as char)" ");
         }
-        println!("");
+        pintln!("");
     }
 
     Ok(())
