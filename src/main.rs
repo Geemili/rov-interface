@@ -1,12 +1,19 @@
 
+#![recursion_limit = "1024"]
+
 extern crate serial;
 extern crate sdl2;
 extern crate sdl2_ttf;
 #[macro_use]
 extern crate fomat_macros;
+#[macro_use]
+extern crate error_chain;
+
+mod errors;
 
 use std::path::Path;
 use sdl2::pixels::Color;
+use errors::*;
 
 fn main() {
     use std;
@@ -121,23 +128,23 @@ fn main() {
     }
 }
 
-fn run(port_name: String) -> Result<(), serial::Error> {
+fn run(port_name: String) -> Result<()> {
     use std::io::{Write, Read};
     use std::thread;
     use std::time::Duration;
     use serial::{SerialPort, SerialPortSettings};
 
     // Open port
-    let mut port = serial::open(&port_name)?;
+    let mut port = serial::open(&port_name).chain_err(|| "Couldn't open file")?;
 
     let mut settings = serial::PortSettings::default();
     settings.set_char_size(serial::CharSize::Bits8);
     settings.set_parity(serial::Parity::ParityNone);
     settings.set_stop_bits(serial::StopBits::Stop1);
-    settings.set_baud_rate(serial::BaudRate::Baud9600)?;
-    port.configure(&settings)?;
+    settings.set_baud_rate(serial::BaudRate::Baud9600).chain_err(|| "Couldn't set baud rate")?;
+    port.configure(&settings).chain_err(|| "Couldn't configure port")?;
 
-    port.set_timeout(Duration::from_millis(5000))?;
+    port.set_timeout(Duration::from_millis(5000)).chain_err(|| "Couldn't set duration")?;
 
     // Wait for a few milliseconds
     thread::sleep(Duration::from_millis(1000));
