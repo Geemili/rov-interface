@@ -1,6 +1,6 @@
 
 
-This project requires SDL. In order to run the program, you need to have the following files in the PATH.
+This project requires SDL. In order to run the program, you need to have the following files in the PATH (on windows).
 
 ```
 libfreetype-6.dll
