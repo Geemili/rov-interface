@@ -105,6 +105,13 @@ void handle_command(Commands command, uint8_t *buffer)
   switch (command)
   {
     case ControlMotor: {
+      uint8_t motor_id = buffer[0];
+      int16_t throttle = (buffer[1] << 8) | buffer[0];
+      if (motor_id < 6)
+      {
+        break;
+      }
+      // TODO: Send back error message when motor_id is greater then 6
       break;
     }
     case CollectSamples: break;
