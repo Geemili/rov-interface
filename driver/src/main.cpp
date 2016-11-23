@@ -1,5 +1,6 @@
 
 #include <Arduino.h>
+#include <Wire.h>
 #include "commands.h"
 
 #define LIGHTS_RELAY_PIN 13
@@ -37,6 +38,7 @@ Arduino_I2C_ESC motors[] = {
 void setup()
 {
   Serial.begin(115200);
+  Wire.begin();
   parser_state = ParserState::ReceivingCommand;
   pinMode(LIGHTS_RELAY_PIN, OUTPUT);
 }
