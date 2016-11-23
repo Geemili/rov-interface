@@ -30,7 +30,7 @@ fn main() {
     let mut rov = rov::Rov::new(port_name.into());
 
     let sdl_context = sdl2::init().unwrap();
-    let joystick_subsystem = sdl_context.joystick().unwrap();
+    let mut game_controller_subsystem = sdl_context.game_controller().unwrap();
     let video = sdl_context.video().unwrap();
     let mut event_pump = sdl_context.event_pump().unwrap();
     let ttf_context = sdl2_ttf::init().unwrap();
@@ -40,46 +40,52 @@ fn main() {
 
     let mut renderer = window.renderer().accelerated().build().unwrap();
 
+    load_mappings(&mut game_controller_subsystem).expect("Error loading mappings");
     let font = ttf_context.load_font(Path::new("assets/fonts/NotoSans/NotoSans-Regular.ttf"), 64)
         .unwrap();
 
-    let available = match joystick_subsystem.num_joysticks() {
+    let available = match game_controller_subsystem.num_joysticks() {
         Ok(n) => n,
         Err(e) => panic!("Can't enumerate joysticks. :( {:?}", e),
     };
 
-    pintln!((available)" joysticks available");
+    pintln!((available)" game controllers available");
 
-    let mut joystick = None;
+    let mut game_controllers = None;
 
-    // Iterate over all available joysticks and stop once we manage to
+    // Iterate over all available game_controllerss and stop once we manage to
     // open one.
     for id in 0..available {
-        match joystick_subsystem.open(id) {
-            Ok(c) => {
-                pintln!("Success: opened \""(c.name())"\"");
-                joystick = Some(c);
-                break;
+        if game_controller_subsystem.is_game_controller(id) {
+            match game_controller_subsystem.open(id) {
+                Ok(c) => {
+                    pintln!("Success: opened \""(c.name())"\".");
+                    game_controllers = Some(c);
+                    break;
+                }
+                Err(e) => pintln!("failed: "[e]),
             }
-            Err(e) => pintln!("failed: "[e]),
+        } else {
+            pintln!("Controller "(id)" has no mapping.");
         }
     }
 
-    if joystick.is_none() {
+    if game_controllers.is_none() {
         panic!("Couldn't open any joystick");
     };
 
     let mut control_state = ControlState::new();
-    let mut prev_control_state = control_state.clone();
 
     'main: loop {
-        prev_control_state = control_state.clone();
+        let prev_control_state = control_state.clone();
         for event in event_pump.poll_iter() {
             use sdl2::event::Event;
             use sdl2::keyboard::Keycode;
+            use sdl2::controller::Axis;
+            use sdl2::controller::Button;
 
             match event {
-                Event::JoyAxisMotion { axis_idx: 0, value: val, .. } => {
+                Event::ControllerAxisMotion { axis: Axis::LeftY, value: val, .. } => {
                     // Axis motion is an absolute value in the range
                     // [-32768, 32767]. Let's simulate a very rough dead
                     // zone to ignore spurious events.
@@ -90,7 +96,7 @@ fn main() {
                         0.0
                     }
                 }
-                Event::JoyAxisMotion { axis_idx: 1, value: val, .. } => {
+                Event::ControllerAxisMotion { axis: Axis::LeftX, value: val, .. } => {
                     let dead_zone = 10000;
                     control_state.sideways_thrust = if val > dead_zone || val < -dead_zone {
                         val as f64 / 32768.0
@@ -98,7 +104,7 @@ fn main() {
                         0.0
                     }
                 }
-                Event::JoyButtonDown { button_idx: 0, .. } => {
+                Event::ControllerButtonDown { button: Button::Y, .. } => {
                     control_state.power_lights = !control_state.power_lights
                 }
                 Event::Quit { .. } |
@@ -106,6 +112,9 @@ fn main() {
                 _ => (),
             }
         }
+
+        control_state.write_difference(&mut rov, &prev_control_state)
+            .expect("Error writing to rov");
 
         for response in rov.responses().iter() {
             pintln!([response]);
@@ -150,6 +159,26 @@ fn main() {
     }
 
     rov.quit().unwrap();
+}
+
+fn load_mappings(game_controller_subsystem: &mut sdl2::GameControllerSubsystem) -> Result<()> {
+    use std::fs::OpenOptions;
+    use std::io::{BufReader, BufRead};
+    let file = OpenOptions::new().read(true)
+        .open("assets/controller_mappings.csv")
+        .chain_err(|| "Unable to load controller mappings")?;
+    let reader = BufReader::new(&file);
+    for line in reader.lines() {
+        let l = line.chain_err(|| "Error reading line")?;
+        if l == "" {
+            continue;
+        }
+        match game_controller_subsystem.add_mapping(l.trim()) {
+            Ok(_) => {}
+            Err(e) => pintln!("Error parsing mapping: "[e]),
+        }
+    }
+    Ok(())
 }
 
 #[derive(Clone)]
