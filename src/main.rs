@@ -9,10 +9,12 @@ extern crate sdl2_ttf;
 extern crate fomat_macros;
 #[macro_use]
 extern crate error_chain;
+extern crate vecmath;
 
 mod errors;
 mod rov;
 
+use errors::*;
 use std::path::Path;
 use sdl2::pixels::Color;
 
@@ -67,30 +69,37 @@ fn main() {
         panic!("Couldn't open any joystick");
     };
 
-    let mut axis = [0; 2];
-    let mut buttons = [false; 9];
+    let mut control_state = ControlState::new();
+    let mut prev_control_state = control_state.clone();
 
     'main: loop {
+        prev_control_state = control_state.clone();
         for event in event_pump.poll_iter() {
             use sdl2::event::Event;
             use sdl2::keyboard::Keycode;
 
             match event {
-                Event::JoyAxisMotion { axis_idx, value: val, .. } => {
+                Event::JoyAxisMotion { axis_idx: 0, value: val, .. } => {
                     // Axis motion is an absolute value in the range
                     // [-32768, 32767]. Let's simulate a very rough dead
                     // zone to ignore spurious events.
                     let dead_zone = 10000;
-                    axis[axis_idx as usize] = if val > dead_zone || val < -dead_zone {
-                        val
+                    control_state.horizontal_thrust = if val > dead_zone || val < -dead_zone {
+                        val as f64 / 32768.0
                     } else {
-                        0
+                        0.0
                     }
                 }
-                Event::JoyButtonDown { button_idx, .. } => buttons[button_idx as usize] = true,
-                Event::JoyButtonUp { button_idx, .. } => buttons[button_idx as usize] = false,
-                Event::JoyHatMotion { hat_idx, state, .. } => {
-                    pintln!("Hat "(hat_idx)" moved to "[state])
+                Event::JoyAxisMotion { axis_idx: 1, value: val, .. } => {
+                    let dead_zone = 10000;
+                    control_state.sideways_thrust = if val > dead_zone || val < -dead_zone {
+                        val as f64 / 32768.0
+                    } else {
+                        0.0
+                    }
+                }
+                Event::JoyButtonDown { button_idx: 0, .. } => {
+                    control_state.power_lights = !control_state.power_lights
                 }
                 Event::Quit { .. } |
                 Event::KeyUp { keycode: Some(Keycode::Escape), .. } => break 'main,
@@ -106,7 +115,7 @@ fn main() {
         renderer.clear();
 
         renderer.set_draw_color(Color::RGB(255, 255, 255));
-        let surface = font.render(&format!("Axis 0: {}", axis[0]))
+        let surface = font.render(&fomat!("Horizontal: "(control_state.horizontal_thrust)))
             .solid(Color::RGB(255, 255, 255))
             .unwrap();
         let texture = renderer.create_texture_from_surface(&surface).unwrap();
@@ -114,7 +123,7 @@ fn main() {
         dest.set_y(0);
         renderer.copy(&texture, None, Some(dest)).unwrap();
 
-        let surface = font.render(&format!("Axis 1: {}", axis[1]))
+        let surface = font.render(&fomat!("Sideways: "(control_state.sideways_thrust)))
             .solid(Color::RGB(255, 255, 255))
             .unwrap();
         let texture = renderer.create_texture_from_surface(&surface).unwrap();
@@ -122,18 +131,123 @@ fn main() {
         dest.set_y(64);
         renderer.copy(&texture, None, Some(dest)).unwrap();
 
-        let button_width = 800 / buttons.len();
-        for i in 0..buttons.len() {
-            let rect = (i as i32 * button_width as i32, 150, button_width as u32, 64).into();
-            if buttons[i as usize] {
-                renderer.fill_rect(rect).unwrap()
-            } else {
-                renderer.draw_rect(rect).unwrap()
-            }
+        let surface = font.render(&fomat!("Lights"))
+            .solid(Color::RGB(255, 255, 255))
+            .unwrap();
+        let texture = renderer.create_texture_from_surface(&surface).unwrap();
+        let mut dest = surface.rect();
+        dest.set_y(150);
+        renderer.copy(&texture, None, Some(dest)).unwrap();
+        let rect = (dest.x() + dest.width() as i32 + 20, dest.y(), dest.height(), dest.height())
+            .into();
+        if control_state.power_lights {
+            renderer.fill_rect(rect).unwrap()
+        } else {
+            renderer.draw_rect(rect).unwrap()
         }
 
         renderer.present();
     }
 
     rov.quit().unwrap();
+}
+
+#[derive(Clone)]
+struct ControlState {
+    pub horizontal_thrust: f64,
+    pub vertical_thrust: f64,
+    pub sideways_thrust: f64,
+    pub release_one: bool,
+    pub release_all: bool,
+    pub power_lights: bool,
+}
+
+// Corresponding to the BlueROV Vectored ROV configuration
+const MOTOR_1: u8 = 1;
+const MOTOR_2: u8 = 2;
+const MOTOR_3: u8 = 3;
+const MOTOR_4: u8 = 4;
+const MOTOR_5: u8 = 5;
+const MOTOR_6: u8 = 6;
+
+impl ControlState {
+    pub fn new() -> ControlState {
+        ControlState {
+            horizontal_thrust: 0.0,
+            vertical_thrust: 0.0,
+            sideways_thrust: 0.0,
+            release_one: false,
+            release_all: false,
+            power_lights: false,
+        }
+    }
+
+    pub fn write_difference(&self, rov: &mut rov::Rov, other: &ControlState) -> Result<()> {
+        // Horizontal movement
+        if self.horizontal_thrust != other.horizontal_thrust ||
+           self.sideways_thrust != other.sideways_thrust {
+            // TODO: Research doing this with ints.
+            let control_vector = [self.horizontal_thrust, self.sideways_thrust];
+            let motor_1_vector = [0.5, -0.5];
+            let motor_2_vector = [-0.5, -0.5];
+            let motor_3_vector = [0.5, 0.5];
+            let motor_4_vector = [-0.5, 0.5];
+            let motor_1_throttle = vecmath::vec2_dot(control_vector, motor_1_vector);
+            let motor_2_throttle = vecmath::vec2_dot(control_vector, motor_2_vector);
+            let motor_3_throttle = vecmath::vec2_dot(control_vector, motor_3_vector);
+            let motor_4_throttle = vecmath::vec2_dot(control_vector, motor_4_vector);
+
+            rov.send_command(rov::RovCommand::ControlMotor {
+                    id: MOTOR_1,
+                    throttle: (motor_1_throttle * std::i16::MAX as f64) as i16,
+                })
+                .chain_err(|| "Failed to update rov")?;
+            rov.send_command(rov::RovCommand::ControlMotor {
+                    id: MOTOR_2,
+                    throttle: (motor_2_throttle * std::i16::MAX as f64) as i16,
+                })
+                .chain_err(|| "Failed to update rov")?;
+            rov.send_command(rov::RovCommand::ControlMotor {
+                    id: MOTOR_3,
+                    throttle: (motor_3_throttle * std::i16::MAX as f64) as i16,
+                })
+                .chain_err(|| "Failed to update rov")?;
+            rov.send_command(rov::RovCommand::ControlMotor {
+                    id: MOTOR_4,
+                    throttle: (motor_4_throttle * std::i16::MAX as f64) as i16,
+                })
+                .chain_err(|| "Failed to update rov")?;
+        }
+
+        // Vertical movement
+        if self.vertical_thrust != other.vertical_thrust {
+            rov.send_command(rov::RovCommand::ControlMotor {
+                    id: MOTOR_5,
+                    throttle: (self.vertical_thrust * std::i16::MAX as f64) as i16,
+                })
+                .chain_err(|| "Failed to update rov")?;
+            rov.send_command(rov::RovCommand::ControlMotor {
+                    id: MOTOR_6,
+                    throttle: (self.vertical_thrust * std::i16::MAX as f64) as i16,
+                })
+                .chain_err(|| "Failed to update rov")?;
+        }
+
+        // Lights
+        match (self.power_lights, other.power_lights) {
+            (true, false) => {
+                rov.send_command(rov::RovCommand::LightsOn).chain_err(|| "Failed to update rov")?;
+            }
+            (false, true) => {
+                rov.send_command(rov::RovCommand::LightsOff).chain_err(|| "Failed to update rov")?;
+            }
+            _ => {
+                // The mode didn't change; there is no need to send a command
+            }
+        }
+
+        // TODO: Add in releasing sediment
+
+        Ok(())
+    }
 }
