@@ -10,6 +10,7 @@ extern crate fomat_macros;
 #[macro_use]
 extern crate error_chain;
 extern crate vecmath;
+extern crate time;
 
 mod errors;
 mod rov;
@@ -75,9 +76,10 @@ fn main() {
     };
 
     let mut control_state = ControlState::new();
+    let mut prev_control_state = control_state.clone();
+    let mut last_write_time = time::PreciseTime::now();
 
     'main: loop {
-        let prev_control_state = control_state.clone();
         for event in event_pump.poll_iter() {
             use sdl2::event::Event;
             use sdl2::keyboard::Keycode;
@@ -113,8 +115,13 @@ fn main() {
             }
         }
 
-        control_state.write_difference(&mut rov, &prev_control_state)
-            .expect("Error writing to rov");
+        let now = time::PreciseTime::now();
+        if last_write_time.to(now) >= time::Duration::milliseconds(15) {
+            control_state.write_difference(&mut rov, &prev_control_state)
+                .expect("Error writing to rov");
+            prev_control_state = control_state.clone();
+            last_write_time = now;
+        }
 
         for response in rov.responses().iter() {
             pintln!([response]);
