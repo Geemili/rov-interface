@@ -83,7 +83,7 @@ impl Rov {
         settings.set_char_size(serial::CharSize::Bits8);
         settings.set_parity(serial::Parity::ParityNone);
         settings.set_stop_bits(serial::StopBits::Stop1);
-        settings.set_baud_rate(serial::BaudRate::Baud9600).expect("Error setting baud rate");
+        settings.set_baud_rate(serial::BaudRate::Baud115200).expect("Error setting baud rate");
         port.configure(&settings).expect("Error configuring port");
 
         port.set_timeout(Duration::from_millis(5)).expect("Error setting timeout");

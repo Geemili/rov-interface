@@ -116,7 +116,7 @@ fn main() {
         }
 
         let now = time::PreciseTime::now();
-        if last_write_time.to(now) >= time::Duration::milliseconds(15) {
+        if last_write_time.to(now) >= time::Duration::milliseconds(5) {
             control_state.write_difference(&mut rov, &prev_control_state)
                 .expect("Error writing to rov");
             prev_control_state = control_state.clone();

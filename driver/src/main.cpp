@@ -21,7 +21,7 @@ ParserState parser_state;
 
 void setup()
 {
-  Serial.begin(9600);
+  Serial.begin(115200);
   parser_state = ParserState::ReceivingCommand;
   pinMode(LIGHTS_RELAY_PIN, OUTPUT);
 }
