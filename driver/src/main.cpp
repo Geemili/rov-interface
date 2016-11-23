@@ -19,6 +19,21 @@ uint8_t bytes_to_read;
 uint8_t command_crc;
 ParserState parser_state;
 
+#define T100_POLECOUNT 6
+#define T200_POLECOUNT 7
+
+// TODO: Replace the (fake) addresses here with the actual addresses.
+Arduino_I2C_ESC motors[] = {
+  // Forward and sideways vectored motors.
+  Arduino_I2C_ESC(0x29, T100_POLECOUNT), // 0
+  Arduino_I2C_ESC(0x2A, T100_POLECOUNT), // 1
+  Arduino_I2C_ESC(0x2B, T100_POLECOUNT), // 2
+  Arduino_I2C_ESC(0x2C, T100_POLECOUNT), // 3
+  // Top motors
+  Arduino_I2C_ESC(0x2D, T200_POLECOUNT), // 4
+  Arduino_I2C_ESC(0x2E, T200_POLECOUNT)  // 5
+};
+
 void setup()
 {
   Serial.begin(115200);
@@ -87,13 +102,17 @@ void handle_command(Commands command, uint8_t *buffer)
 {
   switch (command)
   {
-    case ControlMotor: break;
+    case ControlMotor: {
+      break;
+    }
     case CollectSamples: break;
-    case LightsOn:
+    case LightsOn: {
       digitalWrite(LIGHTS_RELAY_PIN, HIGH);
       break;
-    case LightsOff:
+    }
+    case LightsOff: {
       digitalWrite(LIGHTS_RELAY_PIN, LOW);
       break;
+    }
   }
 }
