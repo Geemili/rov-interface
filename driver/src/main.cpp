@@ -1,6 +1,7 @@
 
 #include <Arduino.h>
 #include <Wire.h>
+#include "Arduino_I2C_ESC.h"
 #include "commands.h"
 
 #define LIGHTS_RELAY_PIN 13
