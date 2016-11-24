@@ -177,16 +177,16 @@ fn main() {
             let motor_4_start = [370.0, 340.0];
 
             let multiplier = 60.0 / i16::max_value() as f64;
-            let motor_1_vector = vecmath::vec2_scale(MOTOR_1_VEC,
+            let motor_1_vector = vecmath::vec2_scale([-0.5, -0.5],
                                                      mock_rov.motors[MOTOR_1 as usize] as f64 *
                                                      multiplier);
-            let motor_2_vector = vecmath::vec2_scale(MOTOR_2_VEC,
+            let motor_2_vector = vecmath::vec2_scale([0.5, -0.5],
                                                      mock_rov.motors[MOTOR_2 as usize] as f64 *
                                                      multiplier);
-            let motor_3_vector = vecmath::vec2_scale(MOTOR_3_VEC,
+            let motor_3_vector = vecmath::vec2_scale([-0.5, 0.5],
                                                      mock_rov.motors[MOTOR_3 as usize] as f64 *
                                                      multiplier);
-            let motor_4_vector = vecmath::vec2_scale(MOTOR_4_VEC,
+            let motor_4_vector = vecmath::vec2_scale([0.5, 0.5],
                                                      mock_rov.motors[MOTOR_4 as usize] as f64 *
                                                      multiplier);
             let motor_1_end = vecmath::vec2_add(motor_1_start, motor_1_vector);
@@ -252,10 +252,10 @@ const MOTOR_4: u8 = 3;
 const MOTOR_5: u8 = 4;
 const MOTOR_6: u8 = 5;
 
-const MOTOR_1_VEC: [f64; 2] = [-0.5, -0.5];
+const MOTOR_1_VEC: [f64; 2] = [0.5, 0.5];
 const MOTOR_2_VEC: [f64; 2] = [0.5, -0.5];
 const MOTOR_3_VEC: [f64; 2] = [-0.5, 0.5];
-const MOTOR_4_VEC: [f64; 2] = [0.5, 0.5];
+const MOTOR_4_VEC: [f64; 2] = [-0.5, -0.5];
 
 impl ControlState {
     pub fn new() -> ControlState {
@@ -275,6 +275,8 @@ impl ControlState {
            self.sideways_thrust != other.sideways_thrust {
             // TODO: Research doing this with ints.
             let control_vector = [self.horizontal_thrust, self.sideways_thrust];
+
+            // Find out the magnitude of all the motors
             let motor_1_throttle = vecmath::vec2_dot(control_vector, MOTOR_1_VEC);
             let motor_2_throttle = vecmath::vec2_dot(control_vector, MOTOR_2_VEC);
             let motor_3_throttle = vecmath::vec2_dot(control_vector, MOTOR_3_VEC);
