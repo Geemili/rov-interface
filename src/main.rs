@@ -219,6 +219,17 @@ impl ControlState {
     }
 
     pub fn write_difference(&self, rov: &mut rov::Rov, other: &ControlState) -> Result<()> {
+
+        let mut buffer = vec![];
+        self.generate_commands_diff(other, &mut buffer);
+        for command in buffer.iter() {
+            rov.send_command(command.clone()).chain_err(|| "Failed to update rov")?;
+        }
+
+        Ok(())
+    }
+
+    pub fn generate_commands_diff(&self, other: &ControlState, buffer: &mut Vec<rov::RovCommand>) {
         // Horizontal movement
         if self.horizontal_thrust != other.horizontal_thrust ||
            self.sideways_thrust != other.sideways_thrust {
@@ -233,49 +244,43 @@ impl ControlState {
             let motor_3_throttle = vecmath::vec2_dot(control_vector, motor_3_vector);
             let motor_4_throttle = vecmath::vec2_dot(control_vector, motor_4_vector);
 
-            rov.send_command(rov::RovCommand::ControlMotor {
-                    id: MOTOR_1,
-                    throttle: (motor_1_throttle * std::i16::MAX as f64) as i16,
-                })
-                .chain_err(|| "Failed to update rov")?;
-            rov.send_command(rov::RovCommand::ControlMotor {
-                    id: MOTOR_2,
-                    throttle: (motor_2_throttle * std::i16::MAX as f64) as i16,
-                })
-                .chain_err(|| "Failed to update rov")?;
-            rov.send_command(rov::RovCommand::ControlMotor {
-                    id: MOTOR_3,
-                    throttle: (motor_3_throttle * std::i16::MAX as f64) as i16,
-                })
-                .chain_err(|| "Failed to update rov")?;
-            rov.send_command(rov::RovCommand::ControlMotor {
-                    id: MOTOR_4,
-                    throttle: (motor_4_throttle * std::i16::MAX as f64) as i16,
-                })
-                .chain_err(|| "Failed to update rov")?;
+            buffer.push(rov::RovCommand::ControlMotor {
+                id: MOTOR_1,
+                throttle: (motor_1_throttle * std::i16::MAX as f64) as i16,
+            });
+            buffer.push(rov::RovCommand::ControlMotor {
+                id: MOTOR_2,
+                throttle: (motor_2_throttle * std::i16::MAX as f64) as i16,
+            });
+            buffer.push(rov::RovCommand::ControlMotor {
+                id: MOTOR_3,
+                throttle: (motor_3_throttle * std::i16::MAX as f64) as i16,
+            });
+            buffer.push(rov::RovCommand::ControlMotor {
+                id: MOTOR_4,
+                throttle: (motor_4_throttle * std::i16::MAX as f64) as i16,
+            });
         }
 
         // Vertical movement
         if self.vertical_thrust != other.vertical_thrust {
-            rov.send_command(rov::RovCommand::ControlMotor {
-                    id: MOTOR_5,
-                    throttle: (self.vertical_thrust * std::i16::MAX as f64) as i16,
-                })
-                .chain_err(|| "Failed to update rov")?;
-            rov.send_command(rov::RovCommand::ControlMotor {
-                    id: MOTOR_6,
-                    throttle: (self.vertical_thrust * std::i16::MAX as f64) as i16,
-                })
-                .chain_err(|| "Failed to update rov")?;
+            buffer.push(rov::RovCommand::ControlMotor {
+                id: MOTOR_5,
+                throttle: (self.vertical_thrust * std::i16::MAX as f64) as i16,
+            });
+            buffer.push(rov::RovCommand::ControlMotor {
+                id: MOTOR_6,
+                throttle: (self.vertical_thrust * std::i16::MAX as f64) as i16,
+            });
         }
 
         // Lights
         match (self.power_lights, other.power_lights) {
             (true, false) => {
-                rov.send_command(rov::RovCommand::LightsOn).chain_err(|| "Failed to update rov")?;
+                buffer.push(rov::RovCommand::LightsOn);
             }
             (false, true) => {
-                rov.send_command(rov::RovCommand::LightsOff).chain_err(|| "Failed to update rov")?;
+                buffer.push(rov::RovCommand::LightsOff);
             }
             _ => {
                 // The mode didn't change; there is no need to send a command
@@ -283,7 +288,5 @@ impl ControlState {
         }
 
         // TODO: Add in releasing sediment
-
-        Ok(())
     }
 }
