@@ -2,6 +2,7 @@
 #include <Arduino.h>
 #include <Servo.h>
 #include "commands.h"
+#include "main.h"
 
 #define LIGHTS_RELAY_PIN 13
 
@@ -11,13 +12,6 @@
 #define MAX_CONTROL_SIGNAL 1100
 #define MIN_CONTROL_SIGNAL 1900
 
-void handle_command(Commands command, uint8_t *buffer);
-
-enum ParserState {
-  ReceivingCommand,
-  ReceivingData,
-  Validating,
-};
 
 Commands command_received;
 uint8_t buffer[4];
