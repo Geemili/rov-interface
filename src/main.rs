@@ -169,6 +169,45 @@ fn main() {
             renderer.draw_rect(rect).unwrap()
         }
 
+        {
+            // Render mock rov
+            let motor_1_start = [430.0, 260.0];
+            let motor_2_start = [370.0, 260.0];
+            let motor_3_start = [430.0, 340.0];
+            let motor_4_start = [370.0, 340.0];
+
+            let multiplier = 60.0 / i16::max_value() as f64;
+            let motor_1_vector = vecmath::vec2_scale(MOTOR_1_VEC,
+                                                     mock_rov.motors[MOTOR_1 as usize] as f64 *
+                                                     multiplier);
+            let motor_2_vector = vecmath::vec2_scale(MOTOR_2_VEC,
+                                                     mock_rov.motors[MOTOR_2 as usize] as f64 *
+                                                     multiplier);
+            let motor_3_vector = vecmath::vec2_scale(MOTOR_3_VEC,
+                                                     mock_rov.motors[MOTOR_3 as usize] as f64 *
+                                                     multiplier);
+            let motor_4_vector = vecmath::vec2_scale(MOTOR_4_VEC,
+                                                     mock_rov.motors[MOTOR_4 as usize] as f64 *
+                                                     multiplier);
+            let motor_1_end = vecmath::vec2_add(motor_1_start, motor_1_vector);
+            let motor_2_end = vecmath::vec2_add(motor_2_start, motor_2_vector);
+            let motor_3_end = vecmath::vec2_add(motor_3_start, motor_3_vector);
+            let motor_4_end = vecmath::vec2_add(motor_4_start, motor_4_vector);
+
+            renderer.draw_line((motor_1_start[0] as i32, motor_1_start[1] as i32).into(),
+                           (motor_1_end[0] as i32, motor_1_end[1] as i32).into())
+                .unwrap();
+            renderer.draw_line((motor_2_start[0] as i32, motor_2_start[1] as i32).into(),
+                           (motor_2_end[0] as i32, motor_2_end[1] as i32).into())
+                .unwrap();
+            renderer.draw_line((motor_3_start[0] as i32, motor_3_start[1] as i32).into(),
+                           (motor_3_end[0] as i32, motor_3_end[1] as i32).into())
+                .unwrap();
+            renderer.draw_line((motor_4_start[0] as i32, motor_4_start[1] as i32).into(),
+                           (motor_4_end[0] as i32, motor_4_end[1] as i32).into())
+                .unwrap();
+        }
+
         renderer.present();
     }
 
@@ -206,12 +245,17 @@ struct ControlState {
 }
 
 // Corresponding to the BlueROV Vectored ROV configuration
-const MOTOR_1: u8 = 1;
-const MOTOR_2: u8 = 2;
-const MOTOR_3: u8 = 3;
-const MOTOR_4: u8 = 4;
-const MOTOR_5: u8 = 5;
-const MOTOR_6: u8 = 6;
+const MOTOR_1: u8 = 0;
+const MOTOR_2: u8 = 1;
+const MOTOR_3: u8 = 2;
+const MOTOR_4: u8 = 3;
+const MOTOR_5: u8 = 4;
+const MOTOR_6: u8 = 5;
+
+const MOTOR_1_VEC: [f64; 2] = [-0.5, -0.5];
+const MOTOR_2_VEC: [f64; 2] = [0.5, -0.5];
+const MOTOR_3_VEC: [f64; 2] = [-0.5, 0.5];
+const MOTOR_4_VEC: [f64; 2] = [0.5, 0.5];
 
 impl ControlState {
     pub fn new() -> ControlState {
@@ -231,14 +275,10 @@ impl ControlState {
            self.sideways_thrust != other.sideways_thrust {
             // TODO: Research doing this with ints.
             let control_vector = [self.horizontal_thrust, self.sideways_thrust];
-            let motor_1_vector = [0.5, -0.5];
-            let motor_2_vector = [-0.5, -0.5];
-            let motor_3_vector = [0.5, 0.5];
-            let motor_4_vector = [-0.5, 0.5];
-            let motor_1_throttle = vecmath::vec2_dot(control_vector, motor_1_vector);
-            let motor_2_throttle = vecmath::vec2_dot(control_vector, motor_2_vector);
-            let motor_3_throttle = vecmath::vec2_dot(control_vector, motor_3_vector);
-            let motor_4_throttle = vecmath::vec2_dot(control_vector, motor_4_vector);
+            let motor_1_throttle = vecmath::vec2_dot(control_vector, MOTOR_1_VEC);
+            let motor_2_throttle = vecmath::vec2_dot(control_vector, MOTOR_2_VEC);
+            let motor_3_throttle = vecmath::vec2_dot(control_vector, MOTOR_3_VEC);
+            let motor_4_throttle = vecmath::vec2_dot(control_vector, MOTOR_4_VEC);
 
             buffer.push(rov::RovCommand::ControlMotor {
                 id: MOTOR_1,

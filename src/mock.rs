@@ -1,7 +1,9 @@
 
 /// A mock ROV that reflects the state of the ROV.
 
-struct MockRov {
+use rov::RovCommand;
+
+pub struct MockRov {
     pub motors: [i16; 6],
     pub light_relay: bool,
 }
@@ -23,11 +25,11 @@ impl MockRov {
     pub fn apply_command(&mut self, command: &RovCommand) {
         match *command {
             RovCommand::ControlMotor { id, throttle } => {
-                if id < motors.len() {
-                    self.motors[id] = throttle;
+                if (id as usize) < self.motors.len() {
+                    self.motors[id as usize] = throttle;
                 }
             }
-            RovCommand::CollectSamples { amount } => {
+            RovCommand::CollectSamples { .. } => {
                 unimplemented!();
             }
             RovCommand::LightsOn => self.light_relay = true,
