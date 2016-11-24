@@ -14,6 +14,7 @@ extern crate time;
 
 mod errors;
 mod rov;
+mod mock;
 
 use errors::*;
 use std::path::Path;
@@ -78,6 +79,7 @@ fn main() {
     let mut control_state = ControlState::new();
     let mut prev_control_state = control_state.clone();
     let mut last_write_time = time::PreciseTime::now();
+    let mut mock_rov = mock::MockRov::new();
 
     'main: loop {
         for event in event_pump.poll_iter() {
@@ -117,8 +119,13 @@ fn main() {
 
         let now = time::PreciseTime::now();
         if last_write_time.to(now) >= time::Duration::milliseconds(5) {
-            control_state.write_difference(&mut rov, &prev_control_state)
-                .expect("Error writing to rov");
+            let mut buffer = vec![];
+            control_state.generate_commands_diff(&prev_control_state, &mut buffer);
+            mock_rov.apply_commands(&buffer);
+            for command in buffer.iter() {
+                rov.send_command(command.clone()).expect("Failed to update rov");
+            }
+
             prev_control_state = control_state.clone();
             last_write_time = now;
         }
@@ -216,17 +223,6 @@ impl ControlState {
             release_all: false,
             power_lights: false,
         }
-    }
-
-    pub fn write_difference(&self, rov: &mut rov::Rov, other: &ControlState) -> Result<()> {
-
-        let mut buffer = vec![];
-        self.generate_commands_diff(other, &mut buffer);
-        for command in buffer.iter() {
-            rov.send_command(command.clone()).chain_err(|| "Failed to update rov")?;
-        }
-
-        Ok(())
     }
 
     pub fn generate_commands_diff(&self, other: &ControlState, buffer: &mut Vec<rov::RovCommand>) {
