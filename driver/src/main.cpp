@@ -1,10 +1,11 @@
 
 #include <Arduino.h>
-#include <Wire.h>
-#include "Arduino_I2C_ESC.h"
+#include <Servo.h>
 #include "commands.h"
 
 #define LIGHTS_RELAY_PIN 13
+#define MAX_CONTROL_SIGNAL 1100
+#define MIN_CONTROL_SIGNAL 1900
 
 void handle_command(Commands command, uint8_t *buffer);
 
@@ -21,27 +22,31 @@ uint8_t bytes_to_read;
 uint8_t command_crc;
 ParserState parser_state;
 
-#define T100_POLECOUNT 6
-#define T200_POLECOUNT 7
 
-// TODO: Replace the (fake) addresses here with the actual addresses.
-Arduino_I2C_ESC motors[] = {
-  // Forward and sideways vectored motors.
-  Arduino_I2C_ESC(0x29, T100_POLECOUNT), // 0
-  Arduino_I2C_ESC(0x2A, T100_POLECOUNT), // 1
-  Arduino_I2C_ESC(0x2B, T100_POLECOUNT), // 2
-  Arduino_I2C_ESC(0x2C, T100_POLECOUNT), // 3
-  // Top motors
-  Arduino_I2C_ESC(0x2D, T200_POLECOUNT), // 4
-  Arduino_I2C_ESC(0x2E, T200_POLECOUNT)  // 5
-};
+
+Servo motors[6];
 
 void setup()
 {
   Serial.begin(115200);
-  Wire.begin();
   parser_state = ParserState::ReceivingCommand;
   pinMode(LIGHTS_RELAY_PIN, OUTPUT);
+
+  // TODO: Replace the (fake) pins numbers here with the actual pins.
+  motors[0].attach(2);
+  motors[1].attach(3);
+  motors[2].attach(4);
+  motors[3].attach(5);
+  motors[4].attach(6);
+  motors[5].attach(7);
+
+  for (uint8_t i = 0; i < 6; i++) {
+    // Write the stop signal, which is exactly in the middle of the control
+    // signal range
+    motors[i].writeMicroseconds(MIN_CONTROL_SIGNAL + MAX_CONTROL_SIGNAL / 2);
+  }
+  // Delay to allow the ESC to recognize the stopped signal
+  delay(1000);
 }
 
 void loop()
@@ -113,10 +118,11 @@ void handle_command(Commands command, uint8_t *buffer)
   {
     case ControlMotor: {
       uint8_t motor_id = buffer[0];
-      int16_t throttle = (buffer[1] << 8) | buffer[0];
       if (motor_id < 6)
       {
-        motors[motor_id].set(throttle);
+        int16_t throttle = (buffer[1] << 8) | buffer[0];
+        int16_t control_signal = map(throttle, INT16_MIN, INT16_MAX, MIN_CONTROL_SIGNAL, MAX_CONTROL_SIGNAL);
+        motors[motor_id].writeMicroseconds(control_signal);
         break;
       }
       // TODO: Send back error message when motor_id is greater then 6
