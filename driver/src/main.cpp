@@ -98,6 +98,12 @@ void loop()
       break;
     }
   }
+
+  // TODO: Add call to motors[*].update() to prevent the int used for tracking
+  // RPM from overflowing. It is recommended to call it 4 to 10 times a second.
+
+  // TODO: Add code to check if the motors are alive. If any of them aren't
+  // connected, send a message to the surface.
 }
 
 void handle_command(Commands command, uint8_t *buffer)
@@ -109,6 +115,7 @@ void handle_command(Commands command, uint8_t *buffer)
       int16_t throttle = (buffer[1] << 8) | buffer[0];
       if (motor_id < 6)
       {
+        motors[motor_id].set(throttle);
         break;
       }
       // TODO: Send back error message when motor_id is greater then 6
