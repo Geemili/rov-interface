@@ -4,6 +4,7 @@
 #include "commands.h"
 
 #define LIGHTS_RELAY_PIN 13
+#define SAMPLER_RELAY_PIN 4
 #define MAX_CONTROL_SIGNAL 1100
 #define MIN_CONTROL_SIGNAL 1900
 
@@ -22,31 +23,15 @@ uint8_t bytes_to_read;
 uint8_t command_crc;
 ParserState parser_state;
 
-
-
 Servo motors[6];
+bool turn_off_motor;
+uint32_t turn_off_motor_time;
 
 void setup()
 {
   Serial.begin(115200);
   parser_state = ParserState::ReceivingCommand;
-  pinMode(LIGHTS_RELAY_PIN, OUTPUT);
-
-  // TODO: Replace the (fake) pins numbers here with the actual pins.
-  motors[0].attach(2);
-  motors[1].attach(3);
-  motors[2].attach(4);
-  motors[3].attach(5);
-  motors[4].attach(6);
-  motors[5].attach(7);
-
-  for (uint8_t i = 0; i < 6; i++) {
-    // Write the stop signal, which is exactly in the middle of the control
-    // signal range
-    motors[i].writeMicroseconds(MIN_CONTROL_SIGNAL + MAX_CONTROL_SIGNAL / 2);
-  }
-  // Delay to allow the ESC to recognize the stopped signal
-  delay(1000);
+  master_on();
 }
 
 void loop()
@@ -131,5 +116,42 @@ void handle_command(Commands command, uint8_t *buffer)
       digitalWrite(LIGHTS_RELAY_PIN, LOW);
       break;
     }
+  }
+}
+
+void master_on() {
+  pinMode(LIGHTS_RELAY_PIN, OUTPUT);
+  // TODO: Ask if the lights should default to on
+  digitalWrite(LIGHTS_RELAY_PIN, LOW);
+
+  pinMode(SAMPLER_RELAY_PIN, OUTPUT);
+  digitalWrite(SAMPLER_RELAY_PIN, LOW);
+
+  /* ## Turn motors on ## */
+  // TODO: Replace the (fake) pins numbers here with the actual pins.
+  motors[0].attach(2);
+  motors[1].attach(3);
+  motors[2].attach(4);
+  motors[3].attach(5);
+  motors[4].attach(6);
+  motors[5].attach(7);
+
+  for (uint8_t i = 0; i < 6; i++) {
+    // Write the stop signal, which is exactly in the middle of the control
+    // signal range
+    motors[i].writeMicroseconds(MIN_CONTROL_SIGNAL + MAX_CONTROL_SIGNAL / 2);
+  }
+  // Delay to allow the ESC to recognize the stopped signal
+  delay(1000);
+}
+
+void master_off() {
+  digitalWrite(LIGHTS_RELAY_PIN, LOW);
+  digitalWrite(SAMPLER_RELAY_PIN, LOW);
+
+  for (uint8_t i = 0; i < 6; i++) {
+    // Write the stop signal, which is exactly in the middle of the control
+    // signal range
+    motors[i].writeMicroseconds(MIN_CONTROL_SIGNAL + MAX_CONTROL_SIGNAL / 2);
   }
 }
