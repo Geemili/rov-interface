@@ -4,7 +4,10 @@
 #include "commands.h"
 
 #define LIGHTS_RELAY_PIN 13
+
 #define SAMPLER_RELAY_PIN 4
+#define SAMPLER_SINGLE_SHOT_MS 4
+
 #define MAX_CONTROL_SIGNAL 1100
 #define MIN_CONTROL_SIGNAL 1900
 
@@ -89,6 +92,11 @@ void loop()
       break;
     }
   }
+
+  if (turn_off_motor && millis() >= turn_off_motor_time) {
+    digitalWrite(SAMPLER_RELAY_PIN, LOW);
+    turn_off_motor = false;
+  }
 }
 
 void handle_command(Commands command, uint8_t *buffer)
@@ -107,7 +115,17 @@ void handle_command(Commands command, uint8_t *buffer)
       // TODO: Send back error message when motor_id is greater then 6
       break;
     }
-    case CollectSamples: break;
+    case CollectSamples: {
+      uint32_t amount = buffer[0] * SAMPLER_SINGLE_SHOT_MS;
+      if (turn_off_motor) {
+        turn_off_motor_time += amount;
+      } else {
+        digitalWrite(SAMPLER_RELAY_PIN, HIGH);
+        turn_off_motor = true;
+        turn_off_motor_time = millis() + amount;
+      }
+      break;
+    }
     case LightsOn: {
       digitalWrite(LIGHTS_RELAY_PIN, HIGH);
       break;
@@ -135,7 +153,6 @@ void master_on() {
   motors[3].attach(5);
   motors[4].attach(6);
   motors[5].attach(7);
-
   for (uint8_t i = 0; i < 6; i++) {
     // Write the stop signal, which is exactly in the middle of the control
     // signal range
@@ -147,6 +164,7 @@ void master_on() {
 
 void master_off() {
   digitalWrite(LIGHTS_RELAY_PIN, LOW);
+
   digitalWrite(SAMPLER_RELAY_PIN, LOW);
 
   for (uint8_t i = 0; i < 6; i++) {
