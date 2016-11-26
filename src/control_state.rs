@@ -102,7 +102,7 @@ impl ControlState {
             let motor_throttles = [clamp(motor_throttles[0] + self.rotational_thrust, -1.0, 1.0),
                                    clamp(motor_throttles[1] - self.rotational_thrust, -1.0, 1.0),
                                    clamp(motor_throttles[2] - self.rotational_thrust, -1.0, 1.0),
-                                   clamp(motor_throttles[2] + self.rotational_thrust, -1.0, 1.0)];
+                                   clamp(motor_throttles[3] + self.rotational_thrust, -1.0, 1.0)];
 
             buffer.push(RovCommand::ControlMotor {
                 id: MOTOR_1,
