@@ -222,9 +222,6 @@ fn main() {
             renderer.draw_line((motor_4_start[0] as i32, motor_4_start[1] as i32).into(),
                            (motor_4_end[0] as i32, motor_4_end[1] as i32).into())
                 .unwrap();
-            renderer.draw_line((motor_4_start[0] as i32, motor_4_start[1] as i32).into(),
-                           (motor_4_end[0] as i32, motor_4_end[1] as i32).into())
-                .unwrap();
             renderer.draw_line((motor_5_start[0] as i32, motor_5_start[1] as i32).into(),
                            (motor_5_end[0] as i32, motor_5_end[1] as i32).into())
                 .unwrap();
