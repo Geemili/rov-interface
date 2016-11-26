@@ -44,7 +44,10 @@ fn main() {
 
     let mut renderer = window.renderer().accelerated().build().unwrap();
 
-    load_mappings(&mut game_controller_subsystem).expect("Error loading mappings");
+    match load_mappings(&mut game_controller_subsystem) {
+        Ok(_) => {}
+        Err(_) => pintln!("Couldn't load mappings"),
+    }
     let font = ttf_context.load_font(Path::new("assets/fonts/NotoSans/NotoSans-Regular.ttf"), 64)
         .unwrap();
 
