@@ -69,54 +69,57 @@ impl ControlState {
         // Horizontal movement
         if self.forward_thrust != other.forward_thrust ||
            self.sideways_thrust != other.sideways_thrust ||
-           self.thrust_mode != other.thrust_mode {
-            match self.thrust_mode {
+           self.thrust_mode != other.thrust_mode ||
+           self.rotational_thrust != other.rotational_thrust {
+
+            let motor_throttles = match self.thrust_mode {
                 ThrustMode::Normal => {
                     // TODO: Research doing this with ints.
                     let control_vector = [self.forward_thrust, self.sideways_thrust];
 
                     // Find out the magnitude of all the motors
-                    let motor_1_throttle = vecmath::vec2_dot(control_vector, MOTOR_1_VEC);
-                    let motor_2_throttle = vecmath::vec2_dot(control_vector, MOTOR_2_VEC);
-                    let motor_3_throttle = vecmath::vec2_dot(control_vector, MOTOR_3_VEC);
-                    let motor_4_throttle = vecmath::vec2_dot(control_vector, MOTOR_4_VEC);
-
-                    buffer.push(RovCommand::ControlMotor {
-                        id: MOTOR_1,
-                        throttle: (motor_1_throttle * std::i16::MAX as f64) as i16,
-                    });
-                    buffer.push(RovCommand::ControlMotor {
-                        id: MOTOR_2,
-                        throttle: (motor_2_throttle * std::i16::MAX as f64) as i16,
-                    });
-                    buffer.push(RovCommand::ControlMotor {
-                        id: MOTOR_3,
-                        throttle: (motor_3_throttle * std::i16::MAX as f64) as i16,
-                    });
-                    buffer.push(RovCommand::ControlMotor {
-                        id: MOTOR_4,
-                        throttle: (motor_4_throttle * std::i16::MAX as f64) as i16,
-                    });
+                    [vecmath::vec2_dot(control_vector, MOTOR_1_VEC),
+                     vecmath::vec2_dot(control_vector, MOTOR_2_VEC),
+                     vecmath::vec2_dot(control_vector, MOTOR_3_VEC),
+                     vecmath::vec2_dot(control_vector, MOTOR_4_VEC)]
                 }
                 ThrustMode::Emergency => {
-                    buffer.push(RovCommand::ControlMotor {
-                        id: MOTOR_1,
-                        throttle: (self.forward_thrust * std::i16::MAX as f64) as i16,
-                    });
-                    buffer.push(RovCommand::ControlMotor {
-                        id: MOTOR_2,
-                        throttle: (self.forward_thrust * std::i16::MAX as f64) as i16,
-                    });
-                    buffer.push(RovCommand::ControlMotor {
-                        id: MOTOR_3,
-                        throttle: (-self.forward_thrust * std::i16::MAX as f64) as i16,
-                    });
-                    buffer.push(RovCommand::ControlMotor {
-                        id: MOTOR_4,
-                        throttle: (-self.forward_thrust * std::i16::MAX as f64) as i16,
-                    });
+                    [self.forward_thrust,
+                     self.forward_thrust,
+                     -self.forward_thrust,
+                     -self.forward_thrust]
+                }
+            };
+
+            fn clamp(val: f64, low: f64, high: f64) -> f64 {
+                match val {
+                    val if val < low => low,
+                    val if val > high => high,
+                    _ => val,
                 }
             }
+
+            let motor_throttles = [clamp(motor_throttles[0] + self.rotational_thrust, -1.0, 1.0),
+                                   clamp(motor_throttles[1] - self.rotational_thrust, -1.0, 1.0),
+                                   clamp(motor_throttles[2] - self.rotational_thrust, -1.0, 1.0),
+                                   clamp(motor_throttles[2] + self.rotational_thrust, -1.0, 1.0)];
+
+            buffer.push(RovCommand::ControlMotor {
+                id: MOTOR_1,
+                throttle: (motor_throttles[0] * std::i16::MAX as f64) as i16,
+            });
+            buffer.push(RovCommand::ControlMotor {
+                id: MOTOR_2,
+                throttle: (motor_throttles[1] * std::i16::MAX as f64) as i16,
+            });
+            buffer.push(RovCommand::ControlMotor {
+                id: MOTOR_3,
+                throttle: (motor_throttles[2] * std::i16::MAX as f64) as i16,
+            });
+            buffer.push(RovCommand::ControlMotor {
+                id: MOTOR_4,
+                throttle: (motor_throttles[3] * std::i16::MAX as f64) as i16,
+            });
         }
 
         // Vertical movement

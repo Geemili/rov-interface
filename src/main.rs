@@ -110,6 +110,9 @@ fn main() {
                         0.0
                     }
                 }
+                Event::ControllerAxisMotion { axis: Axis::RightX, value: val, .. } => {
+                    control_state.rotational_thrust = val as f64 / 32768.0
+                }
                 Event::ControllerAxisMotion { axis: Axis::TriggerLeft, value: val, .. } => {
                     control_state.ascent_thrust = val as f64 / 32768.0;
                 }
