@@ -108,6 +108,12 @@ fn main() {
                         0.0
                     }
                 }
+                Event::ControllerAxisMotion { axis: Axis::TriggerLeft, value: val, .. } => {
+                    control_state.ascent_thrust = val as f64 / 32768.0;
+                }
+                Event::ControllerAxisMotion { axis: Axis::TriggerRight, value: val, .. } => {
+                    control_state.descent_thrust = val as f64 / 32768.0;
+                }
                 Event::ControllerButtonDown { button: Button::Y, .. } => {
                     control_state.power_lights = !control_state.power_lights
                 }
@@ -175,6 +181,8 @@ fn main() {
             let motor_2_start = [370.0, 260.0];
             let motor_3_start = [430.0, 340.0];
             let motor_4_start = [370.0, 340.0];
+            let motor_5_start = [500.0, 300.0];
+            let motor_6_start = [560.0, 300.0];
 
             let multiplier = 60.0 / i16::max_value() as f64;
             let motor_1_vector = vecmath::vec2_scale([-0.5, -0.5],
@@ -189,10 +197,18 @@ fn main() {
             let motor_4_vector = vecmath::vec2_scale([0.5, 0.5],
                                                      mock_rov.motors[MOTOR_4 as usize] as f64 *
                                                      multiplier);
+            let motor_5_vector = vecmath::vec2_scale([0.0, 1.0],
+                                                     mock_rov.motors[MOTOR_5 as usize] as f64 *
+                                                     multiplier);
+            let motor_6_vector = vecmath::vec2_scale([0.0, 1.0],
+                                                     mock_rov.motors[MOTOR_6 as usize] as f64 *
+                                                     multiplier);
             let motor_1_end = vecmath::vec2_add(motor_1_start, motor_1_vector);
             let motor_2_end = vecmath::vec2_add(motor_2_start, motor_2_vector);
             let motor_3_end = vecmath::vec2_add(motor_3_start, motor_3_vector);
             let motor_4_end = vecmath::vec2_add(motor_4_start, motor_4_vector);
+            let motor_5_end = vecmath::vec2_add(motor_5_start, motor_5_vector);
+            let motor_6_end = vecmath::vec2_add(motor_6_start, motor_6_vector);
 
             renderer.draw_line((motor_1_start[0] as i32, motor_1_start[1] as i32).into(),
                            (motor_1_end[0] as i32, motor_1_end[1] as i32).into())
@@ -205,6 +221,15 @@ fn main() {
                 .unwrap();
             renderer.draw_line((motor_4_start[0] as i32, motor_4_start[1] as i32).into(),
                            (motor_4_end[0] as i32, motor_4_end[1] as i32).into())
+                .unwrap();
+            renderer.draw_line((motor_4_start[0] as i32, motor_4_start[1] as i32).into(),
+                           (motor_4_end[0] as i32, motor_4_end[1] as i32).into())
+                .unwrap();
+            renderer.draw_line((motor_5_start[0] as i32, motor_5_start[1] as i32).into(),
+                           (motor_5_end[0] as i32, motor_5_end[1] as i32).into())
+                .unwrap();
+            renderer.draw_line((motor_6_start[0] as i32, motor_6_start[1] as i32).into(),
+                           (motor_6_end[0] as i32, motor_6_end[1] as i32).into())
                 .unwrap();
         }
 
