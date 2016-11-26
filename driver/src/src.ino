@@ -12,6 +12,13 @@
 #define MAX_CONTROL_SIGNAL 1100
 #define MIN_CONTROL_SIGNAL 1900
 
+#ifndef INT16_MIN
+#define INT16_MIN -32768
+#endif
+#ifndef INT16_MAX
+#define INT16_MAX 32767
+#endif
+
 
 Commands command_received;
 uint8_t buffer[4];
@@ -28,7 +35,7 @@ bool robot_is_on;
 void setup()
 {
   Serial.begin(115200);
-  parser_state = ParserState::ReceivingCommand;
+  parser_state = ReceivingCommand;
   master_on();
 }
 
