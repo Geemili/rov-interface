@@ -94,7 +94,7 @@ fn main() {
                     // [-32768, 32767]. Let's simulate a very rough dead
                     // zone to ignore spurious events.
                     let dead_zone = 10000;
-                    control_state.horizontal_thrust = if val > dead_zone || val < -dead_zone {
+                    control_state.forward_thrust = if val > dead_zone || val < -dead_zone {
                         val as f64 / 32768.0
                     } else {
                         0.0
@@ -138,7 +138,7 @@ fn main() {
         renderer.clear();
 
         renderer.set_draw_color(Color::RGB(255, 255, 255));
-        let surface = font.render(&fomat!("Horizontal: "(control_state.horizontal_thrust)))
+        let surface = font.render(&fomat!("Horizontal: "(control_state.forward_thrust)))
             .solid(Color::RGB(255, 255, 255))
             .unwrap();
         let texture = renderer.create_texture_from_surface(&surface).unwrap();
@@ -234,13 +234,31 @@ fn load_mappings(game_controller_subsystem: &mut sdl2::GameControllerSubsystem) 
     Ok(())
 }
 
+#[derive(Copy, Clone, Debug)]
+enum ThrustMode {
+    Normal,
+    Emergency,
+}
+
+#[derive(Copy, Clone, Debug)]
+enum SamplerReleaseMode {
+    One,
+    All,
+}
+
 #[derive(Clone)]
 struct ControlState {
-    pub horizontal_thrust: f64,
-    pub vertical_thrust: f64,
+    pub thrust_mode: ThrustMode,
+    pub forward_thrust: f64,
     pub sideways_thrust: f64,
-    pub release_one: bool,
-    pub release_all: bool,
+    pub rotational_thrust: f64,
+    pub ascent_thrust: f64,
+    pub descent_thrust: f64,
+
+    pub sampler_release_mode: SamplerReleaseMode,
+    pub sampler_release: bool,
+    pub sampler_release_latch: bool,
+
     pub power_lights: bool,
 }
 
@@ -260,21 +278,27 @@ const MOTOR_4_VEC: [f64; 2] = [-0.5, -0.5];
 impl ControlState {
     pub fn new() -> ControlState {
         ControlState {
-            horizontal_thrust: 0.0,
-            vertical_thrust: 0.0,
+            thrust_mode: ThrustMode::Normal,
+            forward_thrust: 0.0,
             sideways_thrust: 0.0,
-            release_one: false,
-            release_all: false,
+            rotational_thrust: 0.0,
+            ascent_thrust: 0.0,
+            descent_thrust: 0.0,
+
+            sampler_release_mode: SamplerReleaseMode::One,
+            sampler_release: false,
+            sampler_release_latch: false,
+
             power_lights: false,
         }
     }
 
     pub fn generate_commands_diff(&self, other: &ControlState, buffer: &mut Vec<rov::RovCommand>) {
         // Horizontal movement
-        if self.horizontal_thrust != other.horizontal_thrust ||
+        if self.forward_thrust != other.forward_thrust ||
            self.sideways_thrust != other.sideways_thrust {
             // TODO: Research doing this with ints.
-            let control_vector = [self.horizontal_thrust, self.sideways_thrust];
+            let control_vector = [self.forward_thrust, self.sideways_thrust];
 
             // Find out the magnitude of all the motors
             let motor_1_throttle = vecmath::vec2_dot(control_vector, MOTOR_1_VEC);
@@ -301,14 +325,17 @@ impl ControlState {
         }
 
         // Vertical movement
-        if self.vertical_thrust != other.vertical_thrust {
+        if self.ascent_thrust != other.ascent_thrust ||
+           self.descent_thrust != other.descent_thrust {
             buffer.push(rov::RovCommand::ControlMotor {
                 id: MOTOR_5,
-                throttle: (self.vertical_thrust * std::i16::MAX as f64) as i16,
+                throttle: ((self.ascent_thrust - other.descent_thrust) *
+                           std::i16::MAX as f64) as i16,
             });
             buffer.push(rov::RovCommand::ControlMotor {
                 id: MOTOR_6,
-                throttle: (self.vertical_thrust * std::i16::MAX as f64) as i16,
+                throttle: ((self.ascent_thrust - other.descent_thrust) *
+                           std::i16::MAX as f64) as i16,
             });
         }
 
