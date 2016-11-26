@@ -15,10 +15,12 @@ extern crate time;
 mod errors;
 mod rov;
 mod mock;
+mod control_state;
 
 use errors::*;
 use std::path::Path;
 use sdl2::pixels::Color;
+use control_state::{ControlState, ThrustMode, SamplerReleaseMode};
 
 fn main() {
     use std;
@@ -182,6 +184,7 @@ fn main() {
         }
 
         {
+            use control_state::{MOTOR_1, MOTOR_2, MOTOR_3, MOTOR_4, MOTOR_5, MOTOR_6};
             // Render mock rov
             let motor_1_start = [430.0, 260.0];
             let motor_2_start = [370.0, 260.0];
@@ -260,149 +263,4 @@ fn load_mappings(game_controller_subsystem: &mut sdl2::GameControllerSubsystem) 
         }
     }
     Ok(())
-}
-
-#[derive(PartialEq, Copy, Clone, Debug)]
-enum ThrustMode {
-    Normal,
-    Emergency,
-}
-
-#[derive(PartialEq, Copy, Clone, Debug)]
-enum SamplerReleaseMode {
-    One,
-    All,
-}
-
-#[derive(PartialEq, Clone)]
-struct ControlState {
-    pub thrust_mode: ThrustMode,
-    pub forward_thrust: f64,
-    pub sideways_thrust: f64,
-    pub rotational_thrust: f64,
-    pub ascent_thrust: f64,
-    pub descent_thrust: f64,
-
-    pub sampler_release_mode: SamplerReleaseMode,
-    pub sampler_release: bool,
-    pub sampler_release_latch: bool,
-
-    pub power_lights: bool,
-}
-
-// Corresponding to the BlueROV Vectored ROV configuration
-const MOTOR_1: u8 = 0;
-const MOTOR_2: u8 = 1;
-const MOTOR_3: u8 = 2;
-const MOTOR_4: u8 = 3;
-const MOTOR_5: u8 = 4;
-const MOTOR_6: u8 = 5;
-
-const MOTOR_1_VEC: [f64; 2] = [0.5, 0.5];
-const MOTOR_2_VEC: [f64; 2] = [0.5, -0.5];
-const MOTOR_3_VEC: [f64; 2] = [-0.5, 0.5];
-const MOTOR_4_VEC: [f64; 2] = [-0.5, -0.5];
-
-impl ControlState {
-    pub fn new() -> ControlState {
-        ControlState {
-            thrust_mode: ThrustMode::Normal,
-            forward_thrust: 0.0,
-            sideways_thrust: 0.0,
-            rotational_thrust: 0.0,
-            ascent_thrust: 0.0,
-            descent_thrust: 0.0,
-
-            sampler_release_mode: SamplerReleaseMode::One,
-            sampler_release: false,
-            sampler_release_latch: false,
-
-            power_lights: false,
-        }
-    }
-
-    pub fn generate_commands_diff(&self, other: &ControlState, buffer: &mut Vec<rov::RovCommand>) {
-        // Horizontal movement
-        if self.forward_thrust != other.forward_thrust ||
-           self.sideways_thrust != other.sideways_thrust ||
-           self.thrust_mode != other.thrust_mode {
-            match self.thrust_mode {
-                ThrustMode::Normal => {
-                    // TODO: Research doing this with ints.
-                    let control_vector = [self.forward_thrust, self.sideways_thrust];
-
-                    // Find out the magnitude of all the motors
-                    let motor_1_throttle = vecmath::vec2_dot(control_vector, MOTOR_1_VEC);
-                    let motor_2_throttle = vecmath::vec2_dot(control_vector, MOTOR_2_VEC);
-                    let motor_3_throttle = vecmath::vec2_dot(control_vector, MOTOR_3_VEC);
-                    let motor_4_throttle = vecmath::vec2_dot(control_vector, MOTOR_4_VEC);
-
-                    buffer.push(rov::RovCommand::ControlMotor {
-                        id: MOTOR_1,
-                        throttle: (motor_1_throttle * std::i16::MAX as f64) as i16,
-                    });
-                    buffer.push(rov::RovCommand::ControlMotor {
-                        id: MOTOR_2,
-                        throttle: (motor_2_throttle * std::i16::MAX as f64) as i16,
-                    });
-                    buffer.push(rov::RovCommand::ControlMotor {
-                        id: MOTOR_3,
-                        throttle: (motor_3_throttle * std::i16::MAX as f64) as i16,
-                    });
-                    buffer.push(rov::RovCommand::ControlMotor {
-                        id: MOTOR_4,
-                        throttle: (motor_4_throttle * std::i16::MAX as f64) as i16,
-                    });
-                }
-                ThrustMode::Emergency => {
-                    buffer.push(rov::RovCommand::ControlMotor {
-                        id: MOTOR_1,
-                        throttle: (self.forward_thrust * std::i16::MAX as f64) as i16,
-                    });
-                    buffer.push(rov::RovCommand::ControlMotor {
-                        id: MOTOR_2,
-                        throttle: (self.forward_thrust * std::i16::MAX as f64) as i16,
-                    });
-                    buffer.push(rov::RovCommand::ControlMotor {
-                        id: MOTOR_3,
-                        throttle: (-self.forward_thrust * std::i16::MAX as f64) as i16,
-                    });
-                    buffer.push(rov::RovCommand::ControlMotor {
-                        id: MOTOR_4,
-                        throttle: (-self.forward_thrust * std::i16::MAX as f64) as i16,
-                    });
-                }
-            }
-        }
-
-        // Vertical movement
-        if self.ascent_thrust != other.ascent_thrust ||
-           self.descent_thrust != other.descent_thrust {
-            buffer.push(rov::RovCommand::ControlMotor {
-                id: MOTOR_5,
-                throttle: ((self.ascent_thrust - other.descent_thrust) *
-                           std::i16::MAX as f64) as i16,
-            });
-            buffer.push(rov::RovCommand::ControlMotor {
-                id: MOTOR_6,
-                throttle: ((self.ascent_thrust - other.descent_thrust) *
-                           std::i16::MAX as f64) as i16,
-            });
-        }
-
-        // Lights
-        match (self.power_lights, other.power_lights) {
-            (true, false) => {
-                buffer.push(rov::RovCommand::LightsOn);
-            }
-            (false, true) => {
-                buffer.push(rov::RovCommand::LightsOff);
-            }
-            _ => {
-                // The mode didn't change; there is no need to send a command
-            }
-        }
-
-        // TODO: Add in releasing sediment
-    }
 }
