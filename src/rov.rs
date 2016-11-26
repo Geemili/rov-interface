@@ -10,6 +10,8 @@ const COMMAND_CONTROL_MOTOR: u8 = 0x10;
 const COMMAND_COLLECT_SAMPLES: u8 = 0x20;
 const COMMAND_LIGHTS_ON: u8 = 0x31;
 const COMMAND_LIGHTS_OFF: u8 = 0x30;
+const COMMAND_MASTER_ON: u8 = 0x40;
+const COMMAND_MASTER_OFF: u8 = 0x43;
 
 #[derive(Clone)]
 pub enum RovCommand {
@@ -17,6 +19,8 @@ pub enum RovCommand {
     CollectSamples { amount: u8 },
     LightsOn,
     LightsOff,
+    MasterOn,
+    MasterOff,
 }
 
 impl RovCommand {
@@ -31,6 +35,8 @@ impl RovCommand {
             RovCommand::CollectSamples { amount } => vec![COMMAND_CONTROL_MOTOR, amount],
             RovCommand::LightsOn => vec![COMMAND_LIGHTS_ON],
             RovCommand::LightsOff => vec![COMMAND_LIGHTS_OFF],
+            RovCommand::MasterOn => vec![COMMAND_MASTER_ON],
+            RovCommand::MasterOff => vec![COMMAND_MASTER_OFF],
         }
     }
 }

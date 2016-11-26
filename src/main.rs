@@ -125,6 +125,9 @@ fn main() {
                 Event::ControllerButtonDown { button: Button::RightShoulder, .. } => {
                     control_state.thrust_mode = ThrustMode::Emergency
                 }
+                Event::ControllerButtonDown { button: Button::Start, .. } => {
+                    control_state.power_master = !control_state.power_master
+                }
                 Event::Quit { .. } |
                 Event::KeyUp { keycode: Some(Keycode::Escape), .. } => break 'main,
                 _ => (),

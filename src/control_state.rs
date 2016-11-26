@@ -36,6 +36,7 @@ pub struct ControlState {
     pub sampler_release: bool,
     pub sampler_release_latch: bool,
 
+    pub power_master: bool,
     pub power_lights: bool,
 }
 
@@ -59,6 +60,7 @@ impl ControlState {
             sampler_release: false,
             sampler_release_latch: false,
 
+            power_master: true,
             power_lights: false,
         }
     }
@@ -130,6 +132,19 @@ impl ControlState {
                 throttle: ((self.ascent_thrust - other.descent_thrust) *
                            std::i16::MAX as f64) as i16,
             });
+        }
+
+        // Master power
+        match (self.power_master, other.power_master) {
+            (true, false) => {
+                buffer.push(RovCommand::MasterOn);
+            }
+            (false, true) => {
+                buffer.push(RovCommand::MasterOff);
+            }
+            _ => {
+                // The mode didn't change; there is no need to send a command
+            }
         }
 
         // Lights
