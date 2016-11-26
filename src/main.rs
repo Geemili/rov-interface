@@ -128,6 +128,15 @@ fn main() {
                 Event::ControllerButtonDown { button: Button::Start, .. } => {
                     control_state.power_master = !control_state.power_master
                 }
+                Event::ControllerButtonDown { button: Button::B, .. } => {
+                    control_state.sampler_release = true
+                }
+                Event::ControllerButtonUp { button: Button::LeftShoulder, .. } => {
+                    control_state.sampler_release_mode = SamplerReleaseMode::One
+                }
+                Event::ControllerButtonDown { button: Button::LeftShoulder, .. } => {
+                    control_state.sampler_release_mode = SamplerReleaseMode::All
+                }
                 Event::Quit { .. } |
                 Event::KeyUp { keycode: Some(Keycode::Escape), .. } => break 'main,
                 _ => (),
@@ -144,8 +153,10 @@ fn main() {
             }
 
             prev_control_state = control_state.clone();
+            control_state.sampler_release = false;
             last_write_time = now;
         }
+        mock_rov.update();
 
         for response in rov.responses().iter() {
             pintln!([response]);
@@ -178,9 +189,31 @@ fn main() {
         let mut dest = surface.rect();
         dest.set_y(150);
         renderer.copy(&texture, None, Some(dest)).unwrap();
+
         let rect = (dest.x() + dest.width() as i32 + 20, dest.y(), dest.height(), dest.height())
             .into();
         if control_state.power_lights {
+            renderer.fill_rect(rect).unwrap()
+        } else {
+            renderer.draw_rect(rect).unwrap()
+        }
+
+        let rect = (60, 450, 50, 50).into();
+        if mock_rov.robot_is_on {
+            renderer.fill_rect(rect).unwrap()
+        } else {
+            renderer.draw_rect(rect).unwrap()
+        }
+
+        let rect = (120, 450, 50, 50).into();
+        if mock_rov.light_relay {
+            renderer.fill_rect(rect).unwrap()
+        } else {
+            renderer.draw_rect(rect).unwrap()
+        }
+
+        let rect = (180, 450, 50, 50).into();
+        if mock_rov.sampler_relay {
             renderer.fill_rect(rect).unwrap()
         } else {
             renderer.draw_rect(rect).unwrap()

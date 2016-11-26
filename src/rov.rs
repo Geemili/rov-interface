@@ -32,7 +32,7 @@ impl RovCommand {
                      ((throttle >> 8) & 0xFF) as u8,
                      (throttle & 0xFF) as u8]
             }
-            RovCommand::CollectSamples { amount } => vec![COMMAND_CONTROL_MOTOR, amount],
+            RovCommand::CollectSamples { amount } => vec![COMMAND_COLLECT_SAMPLES, amount],
             RovCommand::LightsOn => vec![COMMAND_LIGHTS_ON],
             RovCommand::LightsOff => vec![COMMAND_LIGHTS_OFF],
             RovCommand::MasterOn => vec![COMMAND_MASTER_ON],

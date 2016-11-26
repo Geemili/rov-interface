@@ -160,6 +160,16 @@ impl ControlState {
             }
         }
 
-        // TODO: Add in releasing sediment
+        // Sampler
+        match (self.sampler_release, other.sampler_release) {
+            (true, false) => {
+                let amount = match self.sampler_release_mode {
+                    SamplerReleaseMode::One => 1,
+                    SamplerReleaseMode::All => 6,
+                };
+                buffer.push(RovCommand::CollectSamples { amount: amount });
+            }
+            _ => {}
+        }
     }
 }
