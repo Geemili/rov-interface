@@ -92,23 +92,10 @@ fn main() {
 
             match event {
                 Event::ControllerAxisMotion { axis: Axis::LeftY, value: val, .. } => {
-                    // Axis motion is an absolute value in the range
-                    // [-32768, 32767]. Let's simulate a very rough dead
-                    // zone to ignore spurious events.
-                    let dead_zone = 10000;
-                    control_state.forward_thrust = if val > dead_zone || val < -dead_zone {
-                        val as f64 / 32768.0
-                    } else {
-                        0.0
-                    }
+                    control_state.forward_thrust = val as f64 / 32768.0
                 }
                 Event::ControllerAxisMotion { axis: Axis::LeftX, value: val, .. } => {
-                    let dead_zone = 10000;
-                    control_state.sideways_thrust = if val > dead_zone || val < -dead_zone {
-                        val as f64 / 32768.0
-                    } else {
-                        0.0
-                    }
+                    control_state.sideways_thrust = val as f64 / 32768.0
                 }
                 Event::ControllerAxisMotion { axis: Axis::RightX, value: val, .. } => {
                     control_state.rotational_thrust = val as f64 / 32768.0
