@@ -23,6 +23,7 @@ ParserState parser_state;
 Servo motors[6];
 bool turn_off_motor;
 uint32_t turn_off_motor_time;
+bool robot_is_on;
 
 void setup()
 {
@@ -95,6 +96,13 @@ void loop()
 
 void handle_command(Commands command, uint8_t *buffer)
 {
+  if (command == MasterOn) {
+    master_on();
+    return;
+  }
+  if (!robot_is_on) {
+    return;
+  }
   switch (command)
   {
     case ControlMotor: {
@@ -128,16 +136,28 @@ void handle_command(Commands command, uint8_t *buffer)
       digitalWrite(LIGHTS_RELAY_PIN, LOW);
       break;
     }
+    case MasterOn: {
+      // We should never reach here
+      break;
+    }
+    case MasterOff: {
+      master_off();
+      break;
+    }
   }
 }
 
 void master_on() {
+  robot_is_on = true;
+
   pinMode(LIGHTS_RELAY_PIN, OUTPUT);
   // TODO: Ask if the lights should default to on
   digitalWrite(LIGHTS_RELAY_PIN, LOW);
 
   pinMode(SAMPLER_RELAY_PIN, OUTPUT);
   digitalWrite(SAMPLER_RELAY_PIN, LOW);
+  turn_off_motor = false;
+  turn_off_motor_time = 0;
 
   /* ## Turn motors on ## */
   // TODO: Replace the (fake) pins numbers here with the actual pins.
@@ -157,6 +177,8 @@ void master_on() {
 }
 
 void master_off() {
+  robot_is_on = false;
+
   digitalWrite(LIGHTS_RELAY_PIN, LOW);
 
   digitalWrite(SAMPLER_RELAY_PIN, LOW);
