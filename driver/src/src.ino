@@ -6,7 +6,7 @@
 
 #define LIGHTS_RELAY_PIN 13
 
-#define SAMPLER_RELAY_PIN 12
+#define SAMPLER_RELAY_PIN 4
 #define SAMPLER_SINGLE_SHOT_MS 500
 
 #define MAX_CONTROL_SIGNAL 1100
@@ -168,12 +168,12 @@ void master_on() {
 
   /* ## Turn motors on ## */
   // TODO: Replace the (fake) pins numbers here with the actual pins.
-  motors[0].attach(2);
-  motors[1].attach(3);
-  motors[2].attach(4);
-  motors[3].attach(5);
-  motors[4].attach(6);
-  motors[5].attach(7);
+  motors[0].attach(5);
+  motors[1].attach(6);
+  motors[2].attach(7);
+  motors[3].attach(8);
+  motors[4].attach(9);
+  motors[5].attach(10);
   for (uint8_t i = 0; i < 6; i++) {
     // Write the stop signal, which is exactly in the middle of the control
     // signal range
