@@ -11,6 +11,7 @@ extern crate fomat_macros;
 extern crate error_chain;
 extern crate vecmath;
 extern crate time;
+extern crate serial_enumerate;
 
 mod errors;
 mod rov;
@@ -30,6 +31,10 @@ fn main() {
     } else {
         panic!("Port name is required");
     };
+
+    for device in serial_enumerate::enumerate_serial_ports().unwrap() {
+        println!("{}", device);
+    }
 
     let mut rov = rov::Rov::new(port_name.into());
 
