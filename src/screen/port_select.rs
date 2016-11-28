@@ -5,6 +5,8 @@ use time::{PreciseTime, Duration};
 use serial_enumerate;
 use util::draw_text;
 use screen::{Engine, Screen, Trans};
+use screen::control_rov::RovControl;
+use rov::Rov;
 
 pub struct PortSelect {
     ports: Vec<String>,
@@ -41,6 +43,13 @@ impl Screen for PortSelect {
                     if self.ports.len() > 0 && self.selected > 0 {
                         self.selected -= 1;
                     }
+                }
+                Event::ControllerButtonDown { button: Button::A, .. } |
+                Event::KeyDown { keycode: Some(Keycode::Return), .. } => {
+                    let ref port_name = self.ports[self.selected];
+                    let mut rov = Rov::new(port_name.into());
+                    let control_screen = Box::new(RovControl::new(rov));
+                    return Trans::Switch(control_screen);
                 }
                 Event::Quit { .. } |
                 Event::KeyUp { keycode: Some(Keycode::Escape), .. } => return Trans::Quit,
