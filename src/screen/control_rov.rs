@@ -102,29 +102,8 @@ impl Screen for RovControl {
         engine.renderer.clear();
 
         engine.renderer.set_draw_color(Color::RGB(255, 255, 255));
-        draw_text(&mut engine.renderer,
-                  &engine.font,
-                  &fomat!("Horizontal: "(self.control_state.forward_thrust)),
-                  [0, 0]);
 
-        draw_text(&mut engine.renderer,
-                  &engine.font,
-                  &fomat!("Sideways: "(self.control_state.sideways_thrust)),
-                  [0, 64]);
-
-        draw_text(&mut engine.renderer,
-                  &engine.font,
-                  &fomat!("Lights"),
-                  [0, 150]);
-
-        let rect = (220, 150, 64, 64).into();
-        if self.control_state.power_lights {
-            engine.renderer.fill_rect(rect).unwrap()
-        } else {
-            engine.renderer.draw_rect(rect).unwrap()
-        }
-
-        let rect = (60, 450, 50, 50).into();
+        let rect = (30, 450, 70, 70).into();
         if self.mock_rov.robot_is_on {
             engine.renderer.fill_rect(rect).unwrap()
         } else {
