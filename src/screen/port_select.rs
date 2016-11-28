@@ -48,7 +48,7 @@ impl Screen for PortSelect {
                 Event::KeyDown { keycode: Some(Keycode::Return), .. } => {
                     if self.ports.len() > 0 {
                         let ref port_name = self.ports[self.selected];
-                        let mut rov = Rov::new(port_name.into());
+                        let rov = Rov::new(port_name.into());
                         let control_screen = Box::new(RovControl::new(rov));
                         return Trans::Switch(control_screen);
                     }

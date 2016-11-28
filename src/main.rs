@@ -22,20 +22,18 @@ mod screen;
 
 use errors::*;
 use std::path::Path;
-use sdl2::pixels::Color;
-use control_state::{ControlState, ThrustMode, SamplerReleaseMode};
 
 fn main() {
     let sdl_context = sdl2::init().unwrap();
     let mut game_controller_subsystem = sdl_context.game_controller().unwrap();
     let video = sdl_context.video().unwrap();
-    let mut event_pump = sdl_context.event_pump().unwrap();
+    let event_pump = sdl_context.event_pump().unwrap();
     let ttf_context = sdl2_ttf::init().unwrap();
 
     let window =
         video.window("ROV Interface", 800, 600).position_centered().opengl().build().unwrap();
 
-    let mut renderer = window.renderer().accelerated().build().unwrap();
+    let renderer = window.renderer().accelerated().build().unwrap();
 
     match load_mappings(&mut game_controller_subsystem) {
         Ok(_) => {}
@@ -51,7 +49,7 @@ fn main() {
 
     pintln!((available)" game controllers available");
 
-    let mut game_controllers = None;
+    let mut game_controller = None;
 
     // Iterate over all available game_controllerss and stop once we manage to
     // open one.
@@ -60,7 +58,7 @@ fn main() {
             match game_controller_subsystem.open(id) {
                 Ok(c) => {
                     pintln!("Success: opened \""(c.name())"\".");
-                    game_controllers = Some(c);
+                    game_controller = Some(c);
                     break;
                 }
                 Err(e) => pintln!("failed: "[e]),
@@ -70,7 +68,7 @@ fn main() {
         }
     }
 
-    if game_controllers.is_none() {
+    if game_controller.is_none() {
         panic!("Couldn't open any joystick");
     };
 
@@ -88,7 +86,7 @@ fn main() {
         let current_screen = match screen.update(&mut engine) {
             screen::Trans::Quit => break,
             screen::Trans::None => screen,
-            screen::Trans::Switch(mut new_screen) => new_screen,
+            screen::Trans::Switch(new_screen) => new_screen,
         };
         screen = current_screen;
     }
