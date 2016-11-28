@@ -6,6 +6,7 @@ use screen::{Engine, Screen, Trans};
 use time::{PreciseTime, Duration};
 use vecmath;
 use sdl2::pixels::Color;
+use util::draw_text;
 
 pub struct RovControl {
     control_state: ControlState,
@@ -101,35 +102,22 @@ impl Screen for RovControl {
         engine.renderer.clear();
 
         engine.renderer.set_draw_color(Color::RGB(255, 255, 255));
-        let surface = engine.font
-            .render(&fomat!("Horizontal: "(self.control_state.forward_thrust)))
-            .solid(Color::RGB(255, 255, 255))
-            .unwrap();
-        let texture = engine.renderer.create_texture_from_surface(&surface).unwrap();
-        let mut dest = surface.rect();
-        dest.set_y(0);
-        engine.renderer.copy(&texture, None, Some(dest)).unwrap();
+        draw_text(&mut engine.renderer,
+                  &engine.font,
+                  &fomat!("Horizontal: "(self.control_state.forward_thrust)),
+                  [0, 0]);
 
-        let surface = engine.font
-            .render(&fomat!("Sideways: "(self.control_state.sideways_thrust)))
-            .solid(Color::RGB(255, 255, 255))
-            .unwrap();
-        let texture = engine.renderer.create_texture_from_surface(&surface).unwrap();
-        let mut dest = surface.rect();
-        dest.set_y(64);
-        engine.renderer.copy(&texture, None, Some(dest)).unwrap();
+        draw_text(&mut engine.renderer,
+                  &engine.font,
+                  &fomat!("Sideways: "(self.control_state.sideways_thrust)),
+                  [0, 64]);
 
-        let surface = engine.font
-            .render(&fomat!("Lights"))
-            .solid(Color::RGB(255, 255, 255))
-            .unwrap();
-        let texture = engine.renderer.create_texture_from_surface(&surface).unwrap();
-        let mut dest = surface.rect();
-        dest.set_y(150);
-        engine.renderer.copy(&texture, None, Some(dest)).unwrap();
+        draw_text(&mut engine.renderer,
+                  &engine.font,
+                  &fomat!("Lights"),
+                  [0, 150]);
 
-        let rect = (dest.x() + dest.width() as i32 + 20, dest.y(), dest.height(), dest.height())
-            .into();
+        let rect = (220, 150, 64, 64).into();
         if self.control_state.power_lights {
             engine.renderer.fill_rect(rect).unwrap()
         } else {
