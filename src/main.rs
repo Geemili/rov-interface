@@ -17,6 +17,7 @@ mod errors;
 mod rov;
 mod mock;
 mod control_state;
+mod util;
 mod screen;
 
 use errors::*;
@@ -95,7 +96,7 @@ fn main() {
     };
 
     use screen::Screen;
-    let mut screen: Box<Screen> = Box::new(screen::control_rov::RovControl::new(rov));
+    let mut screen: Box<Screen> = Box::new(screen::port_select::PortSelect::new());
 
     loop {
         let current_screen = match screen.update(&mut engine) {
