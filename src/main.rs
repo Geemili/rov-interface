@@ -17,6 +17,7 @@ mod errors;
 mod rov;
 mod mock;
 mod control_state;
+mod screen;
 
 use errors::*;
 use std::path::Path;
@@ -86,197 +87,24 @@ fn main() {
         panic!("Couldn't open any joystick");
     };
 
-    let mut control_state = ControlState::new();
-    let mut prev_control_state = control_state.clone();
-    let mut last_write_time = time::PreciseTime::now();
-    let mut mock_rov = mock::MockRov::new();
+    let mut engine = screen::Engine {
+        event_pump: event_pump,
+        controllers: game_controller_subsystem,
+        renderer: renderer,
+        font: font,
+    };
 
-    'main: loop {
-        for event in event_pump.poll_iter() {
-            use sdl2::event::Event;
-            use sdl2::keyboard::Keycode;
-            use sdl2::controller::Axis;
-            use sdl2::controller::Button;
+    use screen::Screen;
+    let mut screen: Box<Screen> = Box::new(screen::control_rov::RovControl::new(rov));
 
-            match event {
-                Event::ControllerAxisMotion { axis: Axis::LeftY, value: val, .. } => {
-                    control_state.forward_thrust = val as f64 / 32768.0
-                }
-                Event::ControllerAxisMotion { axis: Axis::LeftX, value: val, .. } => {
-                    control_state.sideways_thrust = val as f64 / 32768.0
-                }
-                Event::ControllerAxisMotion { axis: Axis::RightX, value: val, .. } => {
-                    control_state.rotational_thrust = val as f64 / 32768.0
-                }
-                Event::ControllerAxisMotion { axis: Axis::TriggerLeft, value: val, .. } => {
-                    control_state.ascent_thrust = val as f64 / 32768.0;
-                }
-                Event::ControllerAxisMotion { axis: Axis::TriggerRight, value: val, .. } => {
-                    control_state.descent_thrust = val as f64 / 32768.0;
-                }
-                Event::ControllerButtonDown { button: Button::Y, .. } => {
-                    control_state.power_lights = !control_state.power_lights
-                }
-                Event::ControllerButtonUp { button: Button::RightShoulder, .. } => {
-                    control_state.thrust_mode = ThrustMode::Normal
-                }
-                Event::ControllerButtonDown { button: Button::RightShoulder, .. } => {
-                    control_state.thrust_mode = ThrustMode::Emergency
-                }
-                Event::ControllerButtonDown { button: Button::Start, .. } => {
-                    control_state.power_master = !control_state.power_master
-                }
-                Event::ControllerButtonDown { button: Button::B, .. } => {
-                    control_state.sampler_release = true
-                }
-                Event::ControllerButtonUp { button: Button::LeftShoulder, .. } => {
-                    control_state.sampler_release_mode = SamplerReleaseMode::One
-                }
-                Event::ControllerButtonDown { button: Button::LeftShoulder, .. } => {
-                    control_state.sampler_release_mode = SamplerReleaseMode::All
-                }
-                Event::Quit { .. } |
-                Event::KeyUp { keycode: Some(Keycode::Escape), .. } => break 'main,
-                _ => (),
-            }
-        }
-
-        let now = time::PreciseTime::now();
-        if last_write_time.to(now) >= time::Duration::milliseconds(5) {
-            let mut buffer = vec![];
-            control_state.generate_commands_diff(&prev_control_state, &mut buffer);
-            mock_rov.apply_commands(&buffer);
-            for command in buffer.iter() {
-                rov.send_command(command.clone()).expect("Failed to update rov");
-            }
-
-            prev_control_state = control_state.clone();
-            control_state.sampler_release = false;
-            last_write_time = now;
-        }
-        mock_rov.update();
-
-        for response in rov.responses().iter() {
-            pintln!([response]);
-        }
-
-        renderer.set_draw_color(Color::RGB(255, 128, 128));
-        renderer.clear();
-
-        renderer.set_draw_color(Color::RGB(255, 255, 255));
-        let surface = font.render(&fomat!("Horizontal: "(control_state.forward_thrust)))
-            .solid(Color::RGB(255, 255, 255))
-            .unwrap();
-        let texture = renderer.create_texture_from_surface(&surface).unwrap();
-        let mut dest = surface.rect();
-        dest.set_y(0);
-        renderer.copy(&texture, None, Some(dest)).unwrap();
-
-        let surface = font.render(&fomat!("Sideways: "(control_state.sideways_thrust)))
-            .solid(Color::RGB(255, 255, 255))
-            .unwrap();
-        let texture = renderer.create_texture_from_surface(&surface).unwrap();
-        let mut dest = surface.rect();
-        dest.set_y(64);
-        renderer.copy(&texture, None, Some(dest)).unwrap();
-
-        let surface = font.render(&fomat!("Lights"))
-            .solid(Color::RGB(255, 255, 255))
-            .unwrap();
-        let texture = renderer.create_texture_from_surface(&surface).unwrap();
-        let mut dest = surface.rect();
-        dest.set_y(150);
-        renderer.copy(&texture, None, Some(dest)).unwrap();
-
-        let rect = (dest.x() + dest.width() as i32 + 20, dest.y(), dest.height(), dest.height())
-            .into();
-        if control_state.power_lights {
-            renderer.fill_rect(rect).unwrap()
-        } else {
-            renderer.draw_rect(rect).unwrap()
-        }
-
-        let rect = (60, 450, 50, 50).into();
-        if mock_rov.robot_is_on {
-            renderer.fill_rect(rect).unwrap()
-        } else {
-            renderer.draw_rect(rect).unwrap()
-        }
-
-        let rect = (120, 450, 50, 50).into();
-        if mock_rov.light_relay {
-            renderer.fill_rect(rect).unwrap()
-        } else {
-            renderer.draw_rect(rect).unwrap()
-        }
-
-        let rect = (180, 450, 50, 50).into();
-        if mock_rov.sampler_relay {
-            renderer.fill_rect(rect).unwrap()
-        } else {
-            renderer.draw_rect(rect).unwrap()
-        }
-
-        {
-            use control_state::{MOTOR_1, MOTOR_2, MOTOR_3, MOTOR_4, MOTOR_5, MOTOR_6};
-            // Render mock rov
-            let motor_1_start = [430.0, 260.0];
-            let motor_2_start = [370.0, 260.0];
-            let motor_3_start = [430.0, 340.0];
-            let motor_4_start = [370.0, 340.0];
-            let motor_5_start = [500.0, 300.0];
-            let motor_6_start = [560.0, 300.0];
-
-            let multiplier = 60.0 / i16::max_value() as f64;
-            let motor_1_vector = vecmath::vec2_scale([-0.5, -0.5],
-                                                     mock_rov.motors[MOTOR_1 as usize] as f64 *
-                                                     multiplier);
-            let motor_2_vector = vecmath::vec2_scale([0.5, -0.5],
-                                                     mock_rov.motors[MOTOR_2 as usize] as f64 *
-                                                     multiplier);
-            let motor_3_vector = vecmath::vec2_scale([-0.5, 0.5],
-                                                     mock_rov.motors[MOTOR_3 as usize] as f64 *
-                                                     multiplier);
-            let motor_4_vector = vecmath::vec2_scale([0.5, 0.5],
-                                                     mock_rov.motors[MOTOR_4 as usize] as f64 *
-                                                     multiplier);
-            let motor_5_vector = vecmath::vec2_scale([0.0, 1.0],
-                                                     mock_rov.motors[MOTOR_5 as usize] as f64 *
-                                                     multiplier);
-            let motor_6_vector = vecmath::vec2_scale([0.0, 1.0],
-                                                     mock_rov.motors[MOTOR_6 as usize] as f64 *
-                                                     multiplier);
-            let motor_1_end = vecmath::vec2_add(motor_1_start, motor_1_vector);
-            let motor_2_end = vecmath::vec2_add(motor_2_start, motor_2_vector);
-            let motor_3_end = vecmath::vec2_add(motor_3_start, motor_3_vector);
-            let motor_4_end = vecmath::vec2_add(motor_4_start, motor_4_vector);
-            let motor_5_end = vecmath::vec2_add(motor_5_start, motor_5_vector);
-            let motor_6_end = vecmath::vec2_add(motor_6_start, motor_6_vector);
-
-            renderer.draw_line((motor_1_start[0] as i32, motor_1_start[1] as i32).into(),
-                           (motor_1_end[0] as i32, motor_1_end[1] as i32).into())
-                .unwrap();
-            renderer.draw_line((motor_2_start[0] as i32, motor_2_start[1] as i32).into(),
-                           (motor_2_end[0] as i32, motor_2_end[1] as i32).into())
-                .unwrap();
-            renderer.draw_line((motor_3_start[0] as i32, motor_3_start[1] as i32).into(),
-                           (motor_3_end[0] as i32, motor_3_end[1] as i32).into())
-                .unwrap();
-            renderer.draw_line((motor_4_start[0] as i32, motor_4_start[1] as i32).into(),
-                           (motor_4_end[0] as i32, motor_4_end[1] as i32).into())
-                .unwrap();
-            renderer.draw_line((motor_5_start[0] as i32, motor_5_start[1] as i32).into(),
-                           (motor_5_end[0] as i32, motor_5_end[1] as i32).into())
-                .unwrap();
-            renderer.draw_line((motor_6_start[0] as i32, motor_6_start[1] as i32).into(),
-                           (motor_6_end[0] as i32, motor_6_end[1] as i32).into())
-                .unwrap();
-        }
-
-        renderer.present();
+    loop {
+        let current_screen = match screen.update(&mut engine) {
+            screen::Trans::Quit => break,
+            screen::Trans::None => screen,
+            screen::Trans::Switch(mut new_screen) => new_screen,
+        };
+        screen = current_screen;
     }
-
-    rov.quit().unwrap();
 }
 
 fn load_mappings(game_controller_subsystem: &mut sdl2::GameControllerSubsystem) -> Result<()> {

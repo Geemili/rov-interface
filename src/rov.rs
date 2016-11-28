@@ -71,7 +71,7 @@ impl Rov {
             .chain_err(|| "Could not send command to device thread")
     }
 
-    pub fn quit(&mut self) -> Result<()> {
+    pub fn quit(self) -> Result<()> {
         self.command_sender.send(None).chain_err(|| "Could not send command to device thread")
     }
 
