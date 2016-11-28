@@ -46,10 +46,12 @@ impl Screen for PortSelect {
                 }
                 Event::ControllerButtonDown { button: Button::A, .. } |
                 Event::KeyDown { keycode: Some(Keycode::Return), .. } => {
-                    let ref port_name = self.ports[self.selected];
-                    let mut rov = Rov::new(port_name.into());
-                    let control_screen = Box::new(RovControl::new(rov));
-                    return Trans::Switch(control_screen);
+                    if self.ports.len() > 0 {
+                        let ref port_name = self.ports[self.selected];
+                        let mut rov = Rov::new(port_name.into());
+                        let control_screen = Box::new(RovControl::new(rov));
+                        return Trans::Switch(control_screen);
+                    }
                 }
                 Event::Quit { .. } |
                 Event::KeyUp { keycode: Some(Keycode::Escape), .. } => return Trans::Quit,
@@ -61,6 +63,9 @@ impl Screen for PortSelect {
            Duration::milliseconds(TIME_BETWEEN_POLLING_PORTS_MS) {
             self.ports = serial_enumerate::enumerate_serial_ports().unwrap();
             self.last_poll_time = PreciseTime::now();
+            if self.selected >= self.ports.len() {
+                self.selected = self.ports.len() - 1;
+            }
         }
 
         engine.renderer.clear();
@@ -74,10 +79,13 @@ impl Screen for PortSelect {
             y += height;
         }
 
-        draw_text(&mut engine.renderer,
-                  &engine.font,
-                  ">",
-                  [0, self.selected as i32 * height]);
+
+        if self.ports.len() > 0 {
+            draw_text(&mut engine.renderer,
+                      &engine.font,
+                      ">",
+                      [0, self.selected as i32 * height]);
+        }
 
         engine.renderer.present();
 
