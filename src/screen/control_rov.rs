@@ -109,6 +109,7 @@ impl Screen for RovControl {
         } else {
             engine.renderer.draw_rect(rect).unwrap()
         }
+        draw_text(&mut engine.renderer, &engine.font, "Master", [30, 510]);
 
         let rect = (120, 450, 50, 50).into();
         if self.mock_rov.light_relay {
