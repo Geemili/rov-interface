@@ -71,10 +71,6 @@ impl Rov {
             .chain_err(|| "Could not send command to device thread")
     }
 
-    pub fn quit(self) -> Result<()> {
-        self.command_sender.send(None).chain_err(|| "Could not send command to device thread")
-    }
-
     pub fn responses(&mut self) -> Vec<RovResponse> {
         self.response_receiver.try_iter().collect()
     }
@@ -132,5 +128,11 @@ impl Rov {
         port.write(message).chain_err(|| "Couldn't write message")?;
         port.write(&[parity]).chain_err(|| "Couldn't write parity")?;
         Ok(())
+    }
+}
+
+impl Drop for Rov {
+    fn drop(&mut self) {
+        let _ = self.command_sender.send(None);
     }
 }
