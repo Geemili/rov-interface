@@ -6,7 +6,7 @@ use screen::{Engine, Screen, Trans};
 use time::{PreciseTime, Duration};
 use vecmath;
 use sdl2::pixels::Color;
-use util::draw_text;
+use util::{draw_text, draw_text_ext};
 
 pub struct RovControl {
     control_state: ControlState,
@@ -117,6 +117,10 @@ impl Screen for RovControl {
         } else {
             engine.renderer.draw_rect(rect).unwrap()
         }
+        draw_text_ext(&mut engine.renderer,
+                      &engine.font,
+                      "Lights",
+                      (120, 500, 50, 30).into());
 
         let rect = (180, 450, 50, 50).into();
         if self.mock_rov.sampler_relay {
@@ -124,6 +128,10 @@ impl Screen for RovControl {
         } else {
             engine.renderer.draw_rect(rect).unwrap()
         }
+        draw_text_ext(&mut engine.renderer,
+                      &engine.font,
+                      "Sampler",
+                      (180, 500, 50, 30).into());
 
         {
             use control_state::{MOTOR_1, MOTOR_2, MOTOR_3, MOTOR_4, MOTOR_5, MOTOR_6};
