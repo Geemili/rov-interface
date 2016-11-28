@@ -26,20 +26,6 @@ use sdl2::pixels::Color;
 use control_state::{ControlState, ThrustMode, SamplerReleaseMode};
 
 fn main() {
-    use std;
-    let port_name = if let Some(port) = std::env::args().skip(1).next() {
-        pintln!("Writing to port "(port));
-        String::from(port.trim())
-    } else {
-        panic!("Port name is required");
-    };
-
-    for device in serial_enumerate::enumerate_serial_ports().unwrap() {
-        println!("{}", device);
-    }
-
-    let mut rov = rov::Rov::new(port_name.into());
-
     let sdl_context = sdl2::init().unwrap();
     let mut game_controller_subsystem = sdl_context.game_controller().unwrap();
     let video = sdl_context.video().unwrap();
