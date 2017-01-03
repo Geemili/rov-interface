@@ -2,6 +2,9 @@
 $OUT = "target/rov-interface"
 $OUT_ZIP = "target/rov-interface.zip"
 
+mkdir -f -o $OUT
+cp README.txt $OUT
+
 mkdir -f -p $OUT/dist
 cp libfreetype-6.dll    $OUT/dist
 cp LICENSE.freetype.txt $OUT/dist
