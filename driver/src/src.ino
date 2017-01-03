@@ -6,8 +6,8 @@
 
 #define LIGHTS_RELAY_PIN 13
 
-#define SAMPLER_RELAY_PIN 4
-#define SAMPLER_SINGLE_SHOT_MS 500
+#define SAMPLER_RELAY_PIN 4`
+#define SAMPLER_SINGLE_SHOT_MS 2000
 
 #define MAX_CONTROL_SIGNAL 1100
 #define MIN_CONTROL_SIGNAL 1900
@@ -167,7 +167,6 @@ void master_on() {
   turn_off_motor_time = 0;
 
   /* ## Turn motors on ## */
-  // TODO: Replace the (fake) pins numbers here with the actual pins.
   motors[0].attach(5);
   motors[1].attach(6);
   motors[2].attach(7);

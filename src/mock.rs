@@ -49,7 +49,7 @@ impl MockRov {
             RovCommand::CollectSamples { amount } => {
                 self.sampler_relay = true;
                 self.turn_off_motor = Some(time::now() +
-                                           Duration::milliseconds(500 * amount as i64));
+                                           Duration::milliseconds(2000 * amount as i64));
             }
             RovCommand::LightsOn => self.light_relay = true,
             RovCommand::LightsOff => self.light_relay = false,
