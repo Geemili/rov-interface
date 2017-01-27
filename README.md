@@ -1,4 +1,5 @@
 
+![Top Side Interface](images/top-side-01.png)
 
 This project requires SDL. In order to run the program, you need to have the following files in the PATH (on windows).
 
