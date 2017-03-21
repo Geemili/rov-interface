@@ -1,6 +1,5 @@
 
 #![recursion_limit = "1024"]
-#![feature(receiver_try_iter)]
 
 extern crate serial;
 extern crate sdl2;
