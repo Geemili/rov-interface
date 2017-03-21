@@ -21,8 +21,10 @@ mod screen;
 
 use errors::*;
 use std::path::Path;
+use std::env;
 
 fn main() {
+    let serialport_path = env::args().skip(1).next();
     let sdl_context = sdl2::init().unwrap();
     let mut game_controller_subsystem = sdl_context.game_controller().unwrap();
     let video = sdl_context.video().unwrap();
@@ -79,7 +81,15 @@ fn main() {
     };
 
     use screen::Screen;
-    let mut screen: Box<Screen> = Box::new(screen::port_select::PortSelect::new());
+    let mut screen: Box<Screen> = match serialport_path {
+        Some(path) => {
+            use screen::control_rov::RovControl;
+            use rov::Rov;
+            let rov = Rov::new(path.into());
+            Box::new(RovControl::new(rov))
+        }
+        None => Box::new(screen::port_select::PortSelect::new()),
+    };
 
     loop {
         let current_screen = match screen.update(&mut engine) {
