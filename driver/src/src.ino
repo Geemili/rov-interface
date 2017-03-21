@@ -19,6 +19,7 @@
 #define INT16_MAX 32767
 #endif
 
+#define NUM_MOTORS 4
 
 Commands command_received;
 uint8_t buffer[4];
@@ -27,7 +28,7 @@ uint8_t bytes_to_read;
 uint8_t command_crc;
 ParserState parser_state;
 
-Servo motors[6];
+Servo motors[NUM_MOTORS];
 bool turn_off_motor;
 uint32_t turn_off_motor_time;
 bool robot_is_on;
@@ -114,7 +115,7 @@ void handle_command(Commands command, uint8_t *buffer)
   {
     case ControlMotor: {
       uint8_t motor_id = buffer[0];
-      if (motor_id < 6)
+      if (motor_id < NUM_MOTORS)
       {
         int16_t throttle = (buffer[1] << 8) | buffer[0];
         int16_t control_signal = map(throttle, INT16_MIN, INT16_MAX, MIN_CONTROL_SIGNAL, MAX_CONTROL_SIGNAL);
@@ -171,9 +172,7 @@ void master_on() {
   motors[1].attach(6);
   motors[2].attach(7);
   motors[3].attach(8);
-  motors[4].attach(9);
-  motors[5].attach(10);
-  for (uint8_t i = 0; i < 6; i++) {
+  for (uint8_t i = 0; i < NUM_MOTORS; i++) {
     // Write the stop signal, which is exactly in the middle of the control
     // signal range
     motors[i].writeMicroseconds(MIN_CONTROL_SIGNAL + MAX_CONTROL_SIGNAL / 2);
@@ -189,7 +188,7 @@ void master_off() {
 
   digitalWrite(SAMPLER_RELAY_PIN, LOW);
 
-  for (uint8_t i = 0; i < 6; i++) {
+  for (uint8_t i = 0; i < NUM_MOTORS; i++) {
     // Write the stop signal, which is exactly in the middle of the control
     // signal range
     motors[i].writeMicroseconds(MIN_CONTROL_SIGNAL + MAX_CONTROL_SIGNAL / 2);
