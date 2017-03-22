@@ -12,6 +12,7 @@ const COMMAND_LIGHTS_ON: u8 = 0x31;
 const COMMAND_LIGHTS_OFF: u8 = 0x30;
 const COMMAND_MASTER_ON: u8 = 0x40;
 const COMMAND_MASTER_OFF: u8 = 0x43;
+const COMMAND_CONTROL_SERVO: u8 = 0x66;
 
 #[derive(Clone)]
 pub enum RovCommand {
@@ -21,6 +22,7 @@ pub enum RovCommand {
     LightsOff,
     MasterOn,
     MasterOff,
+    ControlServo { id: u8, microseconds: i16 },
 }
 
 impl RovCommand {
@@ -37,6 +39,7 @@ impl RovCommand {
             RovCommand::LightsOff => vec![COMMAND_LIGHTS_OFF],
             RovCommand::MasterOn => vec![COMMAND_MASTER_ON],
             RovCommand::MasterOff => vec![COMMAND_MASTER_OFF],
+            RovCommand::ControlServo { id, microseconds } => vec![COMMAND_CONTROL_SERVO, id, ((microseconds >> 8) & 0xFF) as u8, (microseconds & 0xFF) as u8,],
         }
     }
 }

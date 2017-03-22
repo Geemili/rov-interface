@@ -38,6 +38,9 @@ pub struct ControlState {
 
     pub power_master: bool,
     pub power_lights: bool,
+
+    pub camera_pan: f64,
+    pub camera_tilt: f64,
 }
 
 
@@ -62,6 +65,9 @@ impl ControlState {
 
             power_master: true,
             power_lights: false,
+
+            camera_pan: 0.0,
+            camera_tilt: 0.0,
         }
     }
 

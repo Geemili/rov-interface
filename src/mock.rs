@@ -63,6 +63,9 @@ impl MockRov {
                     *motor = 0;
                 }
             }
+            RovCommand::ControlServo { id, microseconds } => {
+                // TODO: ADD CAMERAS TO MOCK
+            }
         }
     }
 

@@ -1,0 +1,8 @@
+[Somethign]
+text='''
+The controls for 4 motors (2 forward/backward, 2 up/down) is different than the
+controls for 6 motors.
+
+...actually, the main difference is that you can't go sideways. I think I can
+do everything else the same.
+'''
