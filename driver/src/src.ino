@@ -20,6 +20,7 @@
 #endif
 
 #define NUM_MOTORS 4
+#define NUM_SERVOS 2
 
 Commands command_received;
 uint8_t buffer[4];
@@ -29,6 +30,7 @@ uint8_t command_crc;
 ParserState parser_state;
 
 Servo motors[NUM_MOTORS];
+Servo servos[NUM_SERVOS];
 bool turn_off_motor;
 uint32_t turn_off_motor_time;
 bool robot_is_on;
@@ -152,6 +154,33 @@ void handle_command(Commands command, uint8_t *buffer)
       master_off();
       break;
     }
+    case ControlServo: {
+      uint8_t servo_id = buffer[0];
+      if (servo_id < NUM_MOTORS)
+      {
+        int16_t microseconds = (buffer[1] << 8) | buffer[0];
+        servos[servo_id].writeMicroseconds(microseconds);
+        break;
+      }
+      // TODO: Send back error message when motor_id is greater then 6
+      break;
+    }
+  }
+}
+
+void motors_stop() {
+  for (uint8_t i = 0; i < NUM_MOTORS; i++) {
+    // Write the stop signal, which is exactly in the middle of the control
+    // signal range
+    motors[i].writeMicroseconds(MIN_CONTROL_SIGNAL + MAX_CONTROL_SIGNAL / 2);
+  }
+}
+
+void servos_reset() {
+  for (uint8_t i = 0; i < NUM_SERVOS; i++) {
+    // Write the stop signal, which is exactly in the middle of the control
+    // signal range
+    servos[i].writeMicroseconds(MIN_CONTROL_SIGNAL + MAX_CONTROL_SIGNAL / 2);
   }
 }
 
@@ -172,11 +201,11 @@ void master_on() {
   motors[1].attach(6);
   motors[2].attach(7);
   motors[3].attach(8);
-  for (uint8_t i = 0; i < NUM_MOTORS; i++) {
-    // Write the stop signal, which is exactly in the middle of the control
-    // signal range
-    motors[i].writeMicroseconds(MIN_CONTROL_SIGNAL + MAX_CONTROL_SIGNAL / 2);
-  }
+  motors_stop();
+
+  servos[0].attach(9);
+  servos[1].attach(10);
+  servos_reset();
   // Delay to allow the ESC to recognize the stopped signal
   delay(1000);
 }
@@ -188,9 +217,7 @@ void master_off() {
 
   digitalWrite(SAMPLER_RELAY_PIN, LOW);
 
-  for (uint8_t i = 0; i < NUM_MOTORS; i++) {
-    // Write the stop signal, which is exactly in the middle of the control
-    // signal range
-    motors[i].writeMicroseconds(MIN_CONTROL_SIGNAL + MAX_CONTROL_SIGNAL / 2);
-  }
+  motors_stop();
+  servos_reset();
 }
+
