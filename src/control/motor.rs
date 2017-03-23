@@ -5,15 +5,51 @@ use std::io::Write;
 use rov::RovCommand;
 use vecmath;
 
-// TODO: Make this into a builder
-pub struct MotorInfo {
-    pub id: u8,
-    pub position: [f32; 3],
-    pub direction: [f32; 3],
+pub struct MotorBuilder {
+    pub id: Option<u8>,
+    pub position: Option<[f32; 3]>,
+    pub direction: Option<[f32; 3]>,
+}
+
+impl MotorBuilder {
+    pub fn new() -> Self {
+        MotorBuilder {
+            id: None,
+            position: None,
+            direction: None,
+        }
+    }
+
+    pub fn id(mut self, id: u8) -> Self {
+        self.id = Some(id);
+        self
+    }
+
+    pub fn position(mut self, position: [f32; 3]) -> Self {
+        self.position = Some(position);
+        self
+    }
+
+    pub fn direction(mut self, direction: [f32; 3]) -> Self {
+        self.direction = Some(direction);
+        self
+    }
+
+    pub fn build(self) -> Motor {
+        Motor {
+            id: self.id.unwrap_or(0),
+            direction: self.direction.unwrap_or([1.0, 0.0, 0.0]),
+            thrust: 0,
+            prev_thrust: 0,
+        }
+    }
 }
 
 pub struct Motor {
-    pub info: MotorInfo,
+    // info
+    pub id: u8,
+    pub direction: [f32; 3],
+    // state
     pub thrust: i16,
     pub prev_thrust: i16,
 }
@@ -32,7 +68,7 @@ impl Control for Motor {
         // };
 
         let control_vector = [forward, sideways, ascent - descent];
-        let thrust = vecmath::vec3_dot(control_vector, self.info.direction);
+        let thrust = vecmath::vec3_dot(control_vector, self.direction);
         let thrust = thrust.max(-1.0).min(1.0);
         self.thrust = (thrust * super::INT_MAX) as i16;
     }
@@ -41,7 +77,7 @@ impl Control for Motor {
         use ::rov::RovCommand::ControlMotor;
         if self.thrust != self.prev_thrust {
             output.push(ControlMotor {
-                id: self.info.id,
+                id: self.id,
                 throttle: self.thrust,
             });
         }

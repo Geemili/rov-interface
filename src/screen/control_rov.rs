@@ -22,24 +22,16 @@ impl RovControl {
     pub fn new(rov: Rov) -> RovControl {
         RovControl {
             controls: vec![
-            Box::new(::control::motor::Motor {
-                info: ::control::motor::MotorInfo {
-                    id: 0,
-                    position: [0.0,0.0,0.0],
-                    direction: [1.0,0.0,0.0],
-                },
-                thrust: 0,
-                prev_thrust: 0,
-            }),
-            Box::new(::control::motor::Motor {
-                info: ::control::motor::MotorInfo {
-                    id: 1,
-                    position: [0.0,0.0,0.0],
-                    direction: [0.5,0.5,0.0],
-                },
-                thrust: 0,
-                prev_thrust: 0,
-            }),
+            Box::new(::control::motor::MotorBuilder::new()
+                    .id(0)
+                    .position([0.0; 3])
+                    .direction([1.0,0.0,0.0])
+                    .build()),
+            Box::new(::control::motor::MotorBuilder::new()
+                    .id(1)
+                    .position([0.0; 3])
+                    .direction([0.5,0.5,0.0])
+                    .build()),
             ],
             control_state: ControlState::new(),
             prev_control_state: ControlState::new(),
