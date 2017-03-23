@@ -20,7 +20,6 @@ mod control_state;
 mod util;
 mod screen;
 
-use errors::*;
 use std::path::Path;
 use std::env;
 
