@@ -19,7 +19,7 @@ pub struct Motor {
 impl Control for Motor {
     fn update(&mut self, input: &gilrs::GamepadState) {
         self.prev_thrust = self.thrust;
-        self.thrust = input.value(gilrs::Axis::LeftStickY) as i16;
+        self.thrust = (input.value(gilrs::Axis::LeftStickY) * super::INT_MAX) as i16;
     }
 
     fn write_commands(&self, output: &mut Vec<RovCommand>) {
