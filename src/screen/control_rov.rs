@@ -7,8 +7,10 @@ use time::{PreciseTime, Duration};
 use vecmath;
 use sdl2::pixels::Color;
 use util::{draw_text, draw_text_ext};
+use ::control::Control;
 
 pub struct RovControl {
+    controls: Vec<Box<Control>>,
     control_state: ControlState,
     prev_control_state: ControlState,
     last_write_time: PreciseTime,
@@ -19,6 +21,15 @@ pub struct RovControl {
 impl RovControl {
     pub fn new(rov: Rov) -> RovControl {
         RovControl {
+            controls: vec![Box::new(::control::motor::Motor {
+                info: ::control::motor::MotorInfo {
+                    id: 0,
+                    position: [0.0,0.0,0.0],
+                    direction: [1.0,0.0,0.0],
+                },
+                thrust: 0,
+                prev_thrust: 0,
+            }),],
             control_state: ControlState::new(),
             prev_control_state: ControlState::new(),
             last_write_time: PreciseTime::now(),
@@ -48,6 +59,17 @@ impl Screen for RovControl {
                 Move(LeftTrigger, val, _) => self.control_state.descent_thrust = val as f64 / 32768.0,
                 Move(RightTrigger, val, _) => self.control_state.ascent_thrust = val as f64 / 32768.0,
                 _ => {}
+            }
+        }
+        if let Some((_id, gamepad)) = engine.controllers.gamepads().next() {
+            let gamepad_state = gamepad.state();
+            let mut commands = vec![];
+            for control in self.controls.iter_mut() {
+                control.update(&gamepad_state);
+                control.write_commands(&mut commands);
+            }
+            for command in commands {
+                println!("{:?}", command);
             }
         }
         for event in engine.event_pump.poll_iter() {

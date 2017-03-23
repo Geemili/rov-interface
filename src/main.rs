@@ -19,6 +19,7 @@ mod mock;
 mod control_state;
 mod util;
 mod screen;
+mod control;
 
 use std::path::Path;
 use std::env;

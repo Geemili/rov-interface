@@ -14,7 +14,7 @@ const COMMAND_MASTER_ON: u8 = 0x40;
 const COMMAND_MASTER_OFF: u8 = 0x43;
 const COMMAND_CONTROL_SERVO: u8 = 0x66;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub enum RovCommand {
     ControlMotor { id: u8, throttle: i16 },
     CollectSamples { amount: u8 },
