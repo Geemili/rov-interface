@@ -30,49 +30,31 @@ impl RovControl {
 
 impl Screen for RovControl {
     fn update(&mut self, engine: &mut Engine) -> Trans {
+        for (_, controller_event) in engine.controllers.poll_events() {
+            use gilrs::Event::{ButtonPressed as Press, ButtonReleased as Release, AxisChanged as Move};
+            use gilrs::Button::{North, East, RightTrigger as RB, LeftTrigger as LB, Start};
+            use gilrs::Axis::{LeftStickX, LeftStickY, RightStickX, LeftTrigger, RightTrigger};
+            match controller_event {
+                Press(North, _) => self.control_state.power_lights = !self.control_state.power_lights,
+                Press(East, _) => self.control_state.sampler_release = true,
+                Press(RB, _) => self.control_state.thrust_mode = ThrustMode::Normal,
+                Release(RB, _) => self.control_state.thrust_mode = ThrustMode::Emergency,
+                Press(Start, _) => self.control_state.power_master = !self.control_state.power_master,
+                Press(LB, _) => self.control_state.sampler_release_mode = SamplerReleaseMode::One,
+                Release(LB, _) => self.control_state.sampler_release_mode = SamplerReleaseMode::All,
+                Move(LeftStickX, val, _) => self.control_state.sideways_thrust = val as f64 / 32768.0,
+                Move(LeftStickY, val, _) => self.control_state.forward_thrust = val as f64 / 32768.0,
+                Move(RightStickX, val, _) => self.control_state.rotational_thrust = val as f64 / 32768.0,
+                Move(LeftTrigger, val, _) => self.control_state.descent_thrust = val as f64 / 32768.0,
+                Move(RightTrigger, val, _) => self.control_state.ascent_thrust = val as f64 / 32768.0,
+                _ => {}
+            }
+        }
         for event in engine.event_pump.poll_iter() {
             use sdl2::event::Event;
             use sdl2::keyboard::Keycode;
-            use sdl2::controller::Axis;
-            use sdl2::controller::Button;
 
             match event {
-                Event::ControllerAxisMotion { axis: Axis::LeftY, value: val, .. } => {
-                    self.control_state.forward_thrust = val as f64 / 32768.0
-                }
-                Event::ControllerAxisMotion { axis: Axis::LeftX, value: val, .. } => {
-                    self.control_state.sideways_thrust = val as f64 / 32768.0
-                }
-                Event::ControllerAxisMotion { axis: Axis::RightX, value: val, .. } => {
-                    self.control_state.rotational_thrust = val as f64 / 32768.0
-                }
-                Event::ControllerAxisMotion { axis: Axis::TriggerLeft, value: val, .. } => {
-                    self.control_state.ascent_thrust = val as f64 / 32768.0;
-                }
-                Event::ControllerAxisMotion { axis: Axis::TriggerRight, value: val, .. } => {
-                    self.control_state.descent_thrust = val as f64 / 32768.0;
-                }
-                Event::ControllerButtonDown { button: Button::Y, .. } => {
-                    self.control_state.power_lights = !self.control_state.power_lights
-                }
-                Event::ControllerButtonUp { button: Button::RightShoulder, .. } => {
-                    self.control_state.thrust_mode = ThrustMode::Normal
-                }
-                Event::ControllerButtonDown { button: Button::RightShoulder, .. } => {
-                    self.control_state.thrust_mode = ThrustMode::Emergency
-                }
-                Event::ControllerButtonDown { button: Button::Start, .. } => {
-                    self.control_state.power_master = !self.control_state.power_master
-                }
-                Event::ControllerButtonDown { button: Button::B, .. } => {
-                    self.control_state.sampler_release = true
-                }
-                Event::ControllerButtonUp { button: Button::LeftShoulder, .. } => {
-                    self.control_state.sampler_release_mode = SamplerReleaseMode::One
-                }
-                Event::ControllerButtonDown { button: Button::LeftShoulder, .. } => {
-                    self.control_state.sampler_release_mode = SamplerReleaseMode::All
-                }
                 Event::Quit { .. } |
                 Event::KeyUp { keycode: Some(Keycode::Escape), .. } => return Trans::Quit,
                 _ => (),
