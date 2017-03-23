@@ -10,7 +10,7 @@ extern crate fomat_macros;
 extern crate error_chain;
 extern crate vecmath;
 extern crate time;
-extern crate serial_enumerate;
+extern crate serialport;
 extern crate gilrs;
 
 mod errors;
