@@ -3,7 +3,7 @@ use errors::*;
 use std::io::Read;
 use std::thread;
 use std::time::Duration;
-use serial::{self, SerialPort, SerialPortSettings};
+use serialport::{self, SerialPort, SerialPortSettings};
 use std::sync::mpsc::{self, Sender, Receiver};
 
 const COMMAND_CONTROL_MOTOR: u8 = 0x10;
@@ -82,14 +82,14 @@ impl Rov {
                            command_receiver: Receiver<Option<RovCommand>>,
                            response_sender: Sender<RovResponse>) {
         // Open port
-        let mut port = serial::open(&port_path).expect("Couldn't open port");
+        let mut port = serialport::open(&port_path).expect("Couldn't open port");
 
-        let mut settings = serial::PortSettings::default();
-        settings.set_char_size(serial::CharSize::Bits8);
-        settings.set_parity(serial::Parity::ParityNone);
-        settings.set_stop_bits(serial::StopBits::Stop1);
-        settings.set_baud_rate(serial::BaudRate::Baud115200).expect("Error setting baud rate");
-        port.configure(&settings).expect("Error configuring port");
+        let mut settings = serialport::SerialPortSettings::default();
+        settings.data_bits = serialport::DataBits::Eight;
+        settings.parity = serialport::Parity::None;
+        settings.stop_bits = serialport::StopBits::One;
+        settings.baud_rate = serialport::BaudRate::Baud115200;
+        port.set_all(&settings).expect("Error configuring port");
 
         port.set_timeout(Duration::from_millis(5)).expect("Error setting timeout");
 
@@ -124,8 +124,7 @@ impl Rov {
     }
 
 
-    fn write_message<S>(port: &mut S, message: &[u8]) -> Result<()>
-        where S: serial::SerialPort
+    fn write_message(port: &mut Box<SerialPort>, message: &[u8]) -> Result<()>
     {
         let parity = message.iter().skip(1).fold(message[0], |acc, i| acc ^ i);
         port.write(message).chain_err(|| "Couldn't write message")?;

@@ -1,7 +1,6 @@
 
 #![recursion_limit = "1024"]
 
-extern crate serial;
 extern crate sdl2;
 extern crate sdl2_ttf;
 #[macro_use]
