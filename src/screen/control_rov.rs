@@ -21,7 +21,8 @@ pub struct RovControl {
 impl RovControl {
     pub fn new(rov: Rov) -> RovControl {
         RovControl {
-            controls: vec![Box::new(::control::motor::Motor {
+            controls: vec![
+            Box::new(::control::motor::Motor {
                 info: ::control::motor::MotorInfo {
                     id: 0,
                     position: [0.0,0.0,0.0],
@@ -29,7 +30,17 @@ impl RovControl {
                 },
                 thrust: 0,
                 prev_thrust: 0,
-            }),],
+            }),
+            Box::new(::control::motor::Motor {
+                info: ::control::motor::MotorInfo {
+                    id: 1,
+                    position: [0.0,0.0,0.0],
+                    direction: [0.5,0.5,0.0],
+                },
+                thrust: 0,
+                prev_thrust: 0,
+            }),
+            ],
             control_state: ControlState::new(),
             prev_control_state: ControlState::new(),
             last_write_time: PreciseTime::now(),
