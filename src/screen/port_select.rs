@@ -26,25 +26,47 @@ impl PortSelect {
 
 impl Screen for PortSelect {
     fn update(&mut self, engine: &mut Engine) -> Trans {
+        for (_id, event) in engine.controllers.poll_events() {
+            use gilrs::Event::ButtonReleased as Press;
+            use gilrs::Button::{DPadUp, DPadDown, South};
+
+            match event {
+                Press(DPadDown, _) => {
+                    if self.ports.len() > 0 && self.selected < self.ports.len() - 1 {
+                        self.selected += 1;
+                    }
+                }
+                Press(DPadUp, _) => {
+                    if self.ports.len() > 0 && self.selected > 0 {
+                        self.selected -= 1;
+                    }
+                }
+                Press(South, _) => {
+                    if self.ports.len() > 0 {
+                        let ref port_name = self.ports[self.selected];
+                        let rov = Rov::new(port_name.into());
+                        let control_screen = Box::new(RovControl::new(rov));
+                        return Trans::Switch(control_screen);
+                    }
+                }
+                _ => (),
+            }
+        }
         for event in engine.event_pump.poll_iter() {
             use sdl2::event::Event;
             use sdl2::keyboard::Keycode;
-            use sdl2::controller::Button;
 
             match event {
-                Event::ControllerButtonUp { button: Button::DPadDown, .. } |
                 Event::KeyDown { keycode: Some(Keycode::Down), .. } => {
                     if self.ports.len() > 0 && self.selected < self.ports.len() - 1 {
                         self.selected += 1;
                     }
                 }
-                Event::ControllerButtonDown { button: Button::DPadUp, .. } |
                 Event::KeyDown { keycode: Some(Keycode::Up), .. } => {
                     if self.ports.len() > 0 && self.selected > 0 {
                         self.selected -= 1;
                     }
                 }
-                Event::ControllerButtonDown { button: Button::A, .. } |
                 Event::KeyDown { keycode: Some(Keycode::Return), .. } => {
                     if self.ports.len() > 0 {
                         let ref port_name = self.ports[self.selected];
