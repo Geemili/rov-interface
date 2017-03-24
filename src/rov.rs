@@ -44,9 +44,84 @@ impl RovCommand {
     }
 }
 
+const RESPONSE_MOTOR: u8 = 0x10;
+const RESPONSE_COLLECTING_SAMPLES: u8 = 0x20;
+const RESPONSE_COLLECTING_SAMPLES_NOT: u8 = 0x21;
+const RESPONSE_LIGHTS_ON: u8 = 0x31;
+const RESPONSE_LIGHTS_OFF: u8 = 0x30;
+const RESPONSE_MASTER_ON: u8 = 0x40;
+const RESPONSE_MASTER_OFF: u8 = 0x43;
+const RESPONSE_SERVO: u8 = 0x66;
+
 #[derive(Debug)]
 pub enum RovResponse {
-    Byte(u8),
+    Motor { id: u8, throttle: i16 },
+    CollectingSamples { time_left: u16 },
+    CollectingSamplesNot,
+    LightsOn,
+    LightsOff,
+    MasterOn,
+    MasterOff,
+    Servo { id: u8, microseconds: i16 },
+}
+
+pub enum ParseStatus {
+    Ok(RovResponse),
+    TooShort,
+    Invalid,
+}
+
+impl RovResponse {
+    /// The length of the response, not including the id
+    pub fn response_length(command_byte: u8) -> Option<usize> {
+        match command_byte {
+            RESPONSE_MOTOR => Some(3),
+            RESPONSE_COLLECTING_SAMPLES => Some(2),
+            RESPONSE_COLLECTING_SAMPLES_NOT => Some(0),
+            RESPONSE_LIGHTS_ON => Some(0),
+            RESPONSE_LIGHTS_OFF => Some(0),
+            RESPONSE_MASTER_ON => Some(0),
+            RESPONSE_MASTER_OFF => Some(0),
+            RESPONSE_SERVO => Some(3),
+            _ => None,
+        }
+    }
+
+    pub fn parse(buffer: &[u8]) -> ParseStatus {
+        let length = match Self::response_length(buffer[0]) {
+            Some(len) => len,
+            None => return ParseStatus::Invalid,
+        };
+        // The `+1` is because the length doesn't include the command id
+        if buffer.len() < (length + 1) {
+            return ParseStatus::TooShort;
+        }
+
+        let i16_from_bytes = |left: u8, right: u8| ((left as i16) << 8) | (right as i16);
+        let command = match buffer[0] {
+            RESPONSE_MOTOR => RovResponse::Motor {
+                id: buffer[1],
+                throttle: i16_from_bytes(buffer[2], buffer[3]),
+            },
+
+            RESPONSE_COLLECTING_SAMPLES => RovResponse::CollectingSamples {
+                time_left: ((buffer[1] as u16) << 8) | (buffer[2] as u16),
+            },
+
+            RESPONSE_COLLECTING_SAMPLES_NOT => RovResponse::CollectingSamplesNot,
+            RESPONSE_LIGHTS_ON => RovResponse::LightsOn,
+            RESPONSE_LIGHTS_OFF => RovResponse::LightsOff,
+            RESPONSE_MASTER_ON => RovResponse::MasterOn,
+            RESPONSE_MASTER_OFF => RovResponse::MasterOff,
+            RESPONSE_SERVO => RovResponse::Servo {
+                id: buffer[1],
+                microseconds: ((buffer[2] as i16) << 8) | (buffer[3] as i16),
+            },
+
+            _ => return ParseStatus::Invalid,
+        };
+        ParseStatus::Ok(command)
+    }
 }
 
 
@@ -96,6 +171,8 @@ impl Rov {
         // Wait for a few milliseconds
         thread::sleep(Duration::from_millis(1000));
 
+        let mut response_buffer = vec![];
+
         'device: loop {
             // Check for commands to send
             for command_option in command_receiver.try_iter() {
@@ -112,14 +189,20 @@ impl Rov {
             use std::io;
             match port.read_exact(&mut buffer) {
                 Ok(()) => {
-                    response_sender.send(RovResponse::Byte(buffer[0]))
-                    .expect("Could send response to receiver");
+                    response_buffer.push(buffer[0]);
+                    match RovResponse::parse(&response_buffer) {
+                        ParseStatus::Ok(response) => response_sender.send(response)
+                                         .expect("Could send response to receiver"),
+                        ParseStatus::TooShort => {}
+                        ParseStatus::Invalid => response_buffer.clear(),
+                    }
                 }
                 Err(ref e) if e.kind() == io::ErrorKind::TimedOut => {
                     // Do nothing
                 }
                 Err(e) => panic!("Couldn't read from port: {:?}", e),
             }
+
         }
     }
 
