@@ -98,9 +98,13 @@ void loop()
     }
   }
 
-  if (turn_off_motor && millis() >= turn_off_motor_time) {
-    digitalWrite(SAMPLER_RELAY_PIN, LOW);
-    turn_off_motor = false;
+  if (turn_off_motor) {
+      say_collecting_samples(turn_off_motor_time-millis());
+      if (millis() >= turn_off_motor_time) {
+          digitalWrite(SAMPLER_RELAY_PIN, LOW);
+          turn_off_motor = false;
+          say_collecting_samples_not();
+      }
   }
 }
 
@@ -122,6 +126,7 @@ void handle_command(Commands command, uint8_t *buffer)
         int16_t throttle = (buffer[1] << 8) | buffer[0];
         int16_t control_signal = map(throttle, INT16_MIN, INT16_MAX, MIN_CONTROL_SIGNAL, MAX_CONTROL_SIGNAL);
         motors[motor_id].writeMicroseconds(control_signal);
+        say_motor(motor_id, throttle);
         break;
       }
       // TODO: Send back error message when motor_id is greater then 6
@@ -136,14 +141,17 @@ void handle_command(Commands command, uint8_t *buffer)
         turn_off_motor = true;
         turn_off_motor_time = millis() + amount;
       }
+      say_collecting_samples(turn_off_motor_time - millis());
       break;
     }
     case LightsOn: {
       digitalWrite(LIGHTS_RELAY_PIN, HIGH);
+      say_lights_on();
       break;
     }
     case LightsOff: {
       digitalWrite(LIGHTS_RELAY_PIN, LOW);
+      say_lights_off();
       break;
     }
     case MasterOn: {
@@ -160,6 +168,7 @@ void handle_command(Commands command, uint8_t *buffer)
       {
         int16_t microseconds = (buffer[1] << 8) | buffer[0];
         servos[servo_id].writeMicroseconds(microseconds);
+        say_servo(servo_id, microseconds);
         break;
       }
       // TODO: Send back error message when motor_id is greater then 6
@@ -208,6 +217,8 @@ void master_on() {
   servos_reset();
   // Delay to allow the ESC to recognize the stopped signal
   delay(1000);
+
+  say_master_on();
 }
 
 void master_off() {
@@ -219,5 +230,7 @@ void master_off() {
 
   motors_stop();
   servos_reset();
+
+  say_master_off();
 }
 
