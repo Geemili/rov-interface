@@ -7,7 +7,6 @@ use util::draw_text;
 use screen::{Engine, Screen, Trans};
 use screen::control_rov::RovControl;
 use rov::Rov;
-use std::path::PathBuf;
 
 pub struct PortSelect {
     ports: Vec<serialport::SerialPortInfo>,

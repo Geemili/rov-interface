@@ -1,7 +1,6 @@
 
 use super::Control;
 use gilrs;
-use std::io::Write;
 use rov::RovCommand;
 use vecmath;
 

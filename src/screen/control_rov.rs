@@ -1,7 +1,6 @@
 
 use rov::Rov;
 use mock::MockRov;
-use control_state::{ControlState, ThrustMode, SamplerReleaseMode};
 use screen::{Engine, Screen, Trans};
 use time::{PreciseTime, Duration};
 use vecmath;
@@ -11,8 +10,6 @@ use ::control::Control;
 
 pub struct RovControl {
     controls: Vec<Box<Control>>,
-    control_state: ControlState,
-    prev_control_state: ControlState,
     last_write_time: PreciseTime,
     rov: Rov,
     mock_rov: MockRov,
@@ -45,8 +42,6 @@ impl RovControl {
                     .build()),
             Box::new(::control::lights::Lights::new(gilrs::Button::North)),
             ],
-            control_state: ControlState::new(),
-            prev_control_state: ControlState::new(),
             last_write_time: PreciseTime::now(),
             rov: rov,
             mock_rov: MockRov::new(),
@@ -56,25 +51,7 @@ impl RovControl {
 
 impl Screen for RovControl {
     fn update(&mut self, engine: &mut Engine) -> Trans {
-        for (_, controller_event) in engine.controllers.poll_events() {
-            use gilrs::Event::{ButtonPressed as Press, ButtonReleased as Release, AxisChanged as Move};
-            use gilrs::Button::{North, East, RightTrigger as RB, LeftTrigger as LB, Start};
-            use gilrs::Axis::{LeftStickX, LeftStickY, RightStickX, LeftTrigger, RightTrigger};
-            match controller_event {
-                Press(North, _) => self.control_state.power_lights = !self.control_state.power_lights,
-                Press(East, _) => self.control_state.sampler_release = true,
-                Press(RB, _) => self.control_state.thrust_mode = ThrustMode::Normal,
-                Release(RB, _) => self.control_state.thrust_mode = ThrustMode::Emergency,
-                Press(Start, _) => self.control_state.power_master = !self.control_state.power_master,
-                Press(LB, _) => self.control_state.sampler_release_mode = SamplerReleaseMode::One,
-                Release(LB, _) => self.control_state.sampler_release_mode = SamplerReleaseMode::All,
-                Move(LeftStickX, val, _) => self.control_state.sideways_thrust = val as f64 / 32768.0,
-                Move(LeftStickY, val, _) => self.control_state.forward_thrust = val as f64 / 32768.0,
-                Move(RightStickX, val, _) => self.control_state.rotational_thrust = val as f64 / 32768.0,
-                Move(LeftTrigger, val, _) => self.control_state.descent_thrust = val as f64 / 32768.0,
-                Move(RightTrigger, val, _) => self.control_state.ascent_thrust = val as f64 / 32768.0,
-                _ => {}
-            }
+        for (_, _controller_event) in engine.controllers.poll_events() {
         }
 
         for event in engine.event_pump.poll_iter() {

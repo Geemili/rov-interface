@@ -3,7 +3,7 @@ use errors::*;
 use std::io::Read;
 use std::thread;
 use std::time::Duration;
-use serialport::{self, SerialPort, SerialPortSettings};
+use serialport::{self, SerialPort};
 use std::sync::mpsc::{self, Sender, Receiver};
 
 const COMMAND_CONTROL_MOTOR: u8 = 0x10;
