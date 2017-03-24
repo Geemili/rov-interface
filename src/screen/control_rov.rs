@@ -31,12 +31,12 @@ impl RovControl {
                     .direction([-1.0,0.0,0.0])
                     .build()),
             Box::new(::control::motor::MotorBuilder::new()
-                    .id(4)
+                    .id(2)
                     .position([0.0,-1.0,1.0])
                     .direction([0.0,0.0,-1.0])
                     .build()),
             Box::new(::control::motor::MotorBuilder::new()
-                    .id(5)
+                    .id(3)
                     .position([0.0,1.0,1.0])
                     .direction([0.0,0.0,-1.0])
                     .build()),
@@ -85,6 +85,7 @@ impl Screen for RovControl {
 
         let responses = self.rov.responses();
         self.mock_rov.apply_responses(&responses);
+        pint!("\r");
         for r in responses {
             use rov::RovResponse::{Motor,LightsOn,LightsOff};
             let letter = match r {
@@ -95,7 +96,9 @@ impl Screen for RovControl {
             };
             print!("{}", letter);
         }
-        pintln!();
+        print!("      ");
+        use std::io::{stdout,Write};
+        stdout().flush();
 
         engine.renderer.set_draw_color(Color::RGB(255, 128, 128));
         engine.renderer.clear();
