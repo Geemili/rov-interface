@@ -1,6 +1,7 @@
 
 pub mod motor;
 pub mod lights;
+pub mod master;
 
 use gilrs;
 use ::rov::RovCommand;

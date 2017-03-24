@@ -41,6 +41,7 @@ impl RovControl {
                     .direction([0.0,0.0,-1.0])
                     .build()),
             Box::new(::control::lights::Lights::new(gilrs::Button::North)),
+            Box::new(::control::master::MasterPower::new(gilrs::Button::Start)),
             ],
             last_write_time: PreciseTime::now(),
             rov: rov,
