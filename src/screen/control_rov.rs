@@ -20,6 +20,7 @@ pub struct RovControl {
 
 impl RovControl {
     pub fn new(rov: Rov) -> RovControl {
+        use gilrs;
         RovControl {
             controls: vec![
             Box::new(::control::motor::MotorBuilder::new()
@@ -32,6 +33,7 @@ impl RovControl {
                     .position([0.0; 3])
                     .direction([0.5,0.5,0.0])
                     .build()),
+            Box::new(::control::lights::Lights::new(gilrs::Button::North)),
             ],
             control_state: ControlState::new(),
             prev_control_state: ControlState::new(),
@@ -64,17 +66,7 @@ impl Screen for RovControl {
                 _ => {}
             }
         }
-        if let Some((_id, gamepad)) = engine.controllers.gamepads().next() {
-            let gamepad_state = gamepad.state();
-            let mut commands = vec![];
-            for control in self.controls.iter_mut() {
-                control.update(&gamepad_state);
-                control.write_commands(&mut commands);
-            }
-            for command in commands {
-                println!("{:?}", command);
-            }
-        }
+
         for event in engine.event_pump.poll_iter() {
             use sdl2::event::Event;
             use sdl2::keyboard::Keycode;
@@ -88,16 +80,21 @@ impl Screen for RovControl {
 
         let now = PreciseTime::now();
         if self.last_write_time.to(now) >= Duration::milliseconds(5) {
-            let mut buffer = vec![];
-            self.control_state.generate_commands_diff(&self.prev_control_state, &mut buffer);
-            self.mock_rov.apply_commands(&buffer);
-            for command in buffer.iter() {
-                self.rov.send_command(command.clone()).expect("Failed to update rov");
-            }
+            if let Some((_id, gamepad)) = engine.controllers.gamepads().next() {
+                let gamepad_state = gamepad.state();
+                let mut commands = vec![];
+                for control in self.controls.iter_mut() {
+                    control.update(&gamepad_state);
+                    control.write_commands(&mut commands);
+                }
 
-            self.prev_control_state = self.control_state.clone();
-            self.control_state.sampler_release = false;
-            self.last_write_time = now;
+                self.mock_rov.apply_commands(&commands);
+                for command in commands.iter() {
+                    self.rov.send_command(command.clone()).expect("Failed to update rov");
+                }
+
+                self.last_write_time = now;
+            }
         }
         self.mock_rov.update();
 

@@ -1,5 +1,6 @@
 
 pub mod motor;
+pub mod lights;
 
 use std::io::Write;
 use gilrs;
