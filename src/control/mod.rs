@@ -6,7 +6,7 @@ use std::io::Write;
 use gilrs;
 use ::rov::RovCommand;
 
-pub const INT_MAX: f32 = 32768.0;
+pub const INT_MAX: f32 = 32767.0;
 
 pub trait Control {
     fn update(&mut self, input: &gilrs::GamepadState);
