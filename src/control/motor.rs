@@ -36,9 +36,22 @@ impl MotorBuilder {
     }
 
     pub fn build(self) -> Motor {
+        let direction = self.direction.unwrap_or([1.0, 0.0, 0.0]);
+        let angle = (direction[1]/direction[0]).tan();
+        let rotation_coefficient = match (self.position, angle.is_nan()) {
+            (_,true) => 0.0,
+            (Some(pos), _) if pos == [0.0;3] => 0.0,
+            (Some(pos), _) => {
+                let angle_from_origin = (pos[1]/pos[0]).tan();
+                use std::f32::consts;
+                ((angle-angle_from_origin)/consts::PI).sin()
+            }
+            _ => 0.0,
+        };
         Motor {
             id: self.id.unwrap_or(0),
-            direction: self.direction.unwrap_or([1.0, 0.0, 0.0]),
+            direction: direction,
+            rotation_coefficient: rotation_coefficient,
             thrust: 0,
             prev_thrust: 0,
         }
@@ -49,6 +62,7 @@ pub struct Motor {
     // info
     pub id: u8,
     pub direction: [f32; 3],
+    pub rotation_coefficient: f32,
     // state
     pub thrust: i16,
     pub prev_thrust: i16,
@@ -59,16 +73,13 @@ impl Control for Motor {
         self.prev_thrust = self.thrust;
         let forward = input.value(gilrs::Axis::LeftStickY);
         let sideways = input.value(gilrs::Axis::LeftStickX);
-        let ascent = input.value(gilrs::Axis::LeftTrigger);
-        let descent = input.value(gilrs::Axis::RightTrigger);
-        let _rotational = input.value(gilrs::Axis::RightStickX);
-        // let motor_rotation_sign = {
-            // TODO: calculate from position and direction
-            // Find how well a motor fits on an imaginary circle
-        // };
+        let ascent = input.value(gilrs::Axis::LeftTrigger2);
+        let descent = input.value(gilrs::Axis::RightTrigger2);
+        let rotational = input.value(gilrs::Axis::RightStickX);
 
         let control_vector = [forward, sideways, ascent - descent];
         let thrust = vecmath::vec3_dot(control_vector, self.direction);
+        let thrust = thrust + (rotational * self.rotation_coefficient);
         let thrust = thrust.max(-1.0).min(1.0);
         self.thrust = (thrust * super::INT_MAX) as i16;
     }
