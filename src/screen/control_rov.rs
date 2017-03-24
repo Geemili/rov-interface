@@ -42,6 +42,8 @@ impl RovControl {
                     .build()),
             Box::new(::control::lights::Lights::new(gilrs::Button::North)),
             Box::new(::control::master::MasterPower::new(gilrs::Button::Start)),
+            Box::new(::control::servo::Servo::new(0, gilrs::Button::DPadUp, gilrs::Button::DPadDown)),
+            Box::new(::control::servo::Servo::new(1, gilrs::Button::DPadRight, gilrs::Button::DPadLeft)),
             ],
             last_write_time: PreciseTime::now(),
             rov: rov,
