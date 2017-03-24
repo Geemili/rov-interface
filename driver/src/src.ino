@@ -178,19 +178,23 @@ void handle_command(Commands command, uint8_t *buffer)
 }
 
 void motors_stop() {
-  for (uint8_t i = 0; i < NUM_MOTORS; i++) {
-    // Write the stop signal, which is exactly in the middle of the control
-    // signal range
-    motors[i].writeMicroseconds(MIN_CONTROL_SIGNAL + MAX_CONTROL_SIGNAL / 2);
-  }
+    int16_t stop_signal = MIN_CONTROL_SIGNAL + MAX_CONTROL_SIGNAL / 2;
+    for (uint8_t i = 0; i < NUM_MOTORS; i++) {
+        // Write the stop signal, which is exactly in the middle of the control
+        // signal range
+        motors[i].writeMicroseconds(stop_signal);
+        say_motor(i, 0);
+    }
 }
 
 void servos_reset() {
-  for (uint8_t i = 0; i < NUM_SERVOS; i++) {
-    // Write the stop signal, which is exactly in the middle of the control
-    // signal range
-    servos[i].writeMicroseconds(MIN_CONTROL_SIGNAL + MAX_CONTROL_SIGNAL / 2);
-  }
+    int16_t microseconds = MIN_CONTROL_SIGNAL + MAX_CONTROL_SIGNAL / 2;
+    for (uint8_t i = 0; i < NUM_SERVOS; i++) {
+        // Write the stop signal, which is exactly in the middle of the control
+        // signal range
+        servos[i].writeMicroseconds(microseconds);
+        say_servo(i, microseconds);
+    }
 }
 
 void master_on() {
@@ -199,11 +203,13 @@ void master_on() {
   pinMode(LIGHTS_RELAY_PIN, OUTPUT);
   // TODO: Ask if the lights should default to on
   digitalWrite(LIGHTS_RELAY_PIN, LOW);
+  say_lights_off();
 
   pinMode(SAMPLER_RELAY_PIN, OUTPUT);
   digitalWrite(SAMPLER_RELAY_PIN, LOW);
   turn_off_motor = false;
   turn_off_motor_time = 0;
+  say_collecting_samples_not();
 
   /* ## Turn motors on ## */
   motors[0].attach(5);
@@ -225,8 +231,10 @@ void master_off() {
   robot_is_on = false;
 
   digitalWrite(LIGHTS_RELAY_PIN, LOW);
+  say_lights_off();
 
   digitalWrite(SAMPLER_RELAY_PIN, LOW);
+  say_collecting_samples_not();
 
   motors_stop();
   servos_reset();

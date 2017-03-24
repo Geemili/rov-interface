@@ -75,7 +75,6 @@ impl Screen for RovControl {
                     control.write_commands(&mut commands);
                 }
 
-                self.mock_rov.apply_commands(&commands);
                 for command in commands.iter() {
                     self.rov.send_command(command.clone()).expect("Failed to update rov");
                 }
@@ -83,11 +82,8 @@ impl Screen for RovControl {
                 self.last_write_time = now;
             }
         }
-        self.mock_rov.update();
 
-        for response in self.rov.responses().iter() {
-            pintln!([response]);
-        }
+        self.mock_rov.apply_responses(&self.rov.responses());
 
         engine.renderer.set_draw_color(Color::RGB(255, 128, 128));
         engine.renderer.clear();
