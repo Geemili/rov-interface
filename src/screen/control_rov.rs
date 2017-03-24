@@ -83,7 +83,19 @@ impl Screen for RovControl {
             }
         }
 
-        self.mock_rov.apply_responses(&self.rov.responses());
+        let responses = self.rov.responses();
+        self.mock_rov.apply_responses(&responses);
+        for r in responses {
+            use rov::RovResponse::{Motor,LightsOn,LightsOff};
+            let letter = match r {
+                Motor {..} => 'm',
+                LightsOn => 'L',
+                LightsOff => 'l',
+                _ => '*',
+            };
+            print!("{}", letter);
+        }
+        pintln!();
 
         engine.renderer.set_draw_color(Color::RGB(255, 128, 128));
         engine.renderer.clear();

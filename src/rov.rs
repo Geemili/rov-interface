@@ -66,11 +66,12 @@ pub enum RovResponse {
 }
 
 pub enum ParseStatus {
-    Ok(RovResponse),
+    Ok(RovResponse, usize), // bytes read
     TooShort,
     Invalid,
 }
 
+use std::collections::VecDeque;
 impl RovResponse {
     /// The length of the response, not including the id
     pub fn response_length(command_byte: u8) -> Option<usize> {
@@ -87,7 +88,8 @@ impl RovResponse {
         }
     }
 
-    pub fn parse(buffer: &[u8]) -> ParseStatus {
+    // Make it not VecDeque. Change parsing method completely
+    fn parse(buffer: &VecDeque<u8>) -> ParseStatus {
         let length = match Self::response_length(buffer[0]) {
             Some(len) => len,
             None => return ParseStatus::Invalid,
@@ -120,7 +122,7 @@ impl RovResponse {
 
             _ => return ParseStatus::Invalid,
         };
-        ParseStatus::Ok(command)
+        ParseStatus::Ok(command, (length+1))
     }
 }
 
@@ -171,7 +173,8 @@ impl Rov {
         // Wait for a few milliseconds
         thread::sleep(Duration::from_millis(1000));
 
-        let mut response_buffer = vec![];
+        use std;
+        let mut response_buffer = std::collections::VecDeque::new();
 
         'device: loop {
             // Check for commands to send
@@ -189,12 +192,16 @@ impl Rov {
             use std::io;
             match port.read_exact(&mut buffer) {
                 Ok(()) => {
-                    response_buffer.push(buffer[0]);
+                    response_buffer.push_back(buffer[0]);
                     match RovResponse::parse(&response_buffer) {
-                        ParseStatus::Ok(response) => response_sender.send(response)
-                                         .expect("Could send response to receiver"),
+                        ParseStatus::Ok(response, bytes_read) => {
+                            response_sender.send(response).expect("Could send response to receiver");
+                            for _ in 0..bytes_read {
+                                response_buffer.pop_front();
+                            }
+                        }
                         ParseStatus::TooShort => {}
-                        ParseStatus::Invalid => response_buffer.clear(),
+                        ParseStatus::Invalid => {response_buffer.pop_front();}
                     }
                 }
                 Err(ref e) if e.kind() == io::ErrorKind::TimedOut => {
