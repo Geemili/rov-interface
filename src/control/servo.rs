@@ -2,7 +2,10 @@
 use super::Control;
 use gilrs;
 use rov::RovCommand;
-use vecmath;
+
+pub const SERVO_LOW: i16 = 1000;
+pub const SERVO_MID: i16 = 1500;
+pub const SERVO_HIGH: i16 = 2000;
 
 pub struct Servo {
     // info
@@ -20,8 +23,8 @@ impl Servo {
             id: id,
             increase_button: increase_button,
             decrease_button: decrease_button,
-            microseconds: 0,
-            prev_microseconds: 0,
+            microseconds: SERVO_MID,
+            prev_microseconds: SERVO_MID,
         }
     }
 }
@@ -32,10 +35,16 @@ impl Control for Servo {
         let increase = input.is_pressed(self.increase_button);
         let decrease = input.is_pressed(self.decrease_button);
 
-        match (increase, decrease) {
-            (true, false) => self.microseconds += 10,
-            (false, true) => self.microseconds -= 10,
-            _ => {}
+        self.microseconds = match (increase, decrease) {
+            (true, false) => self.microseconds.saturating_add(10),
+            (false, true) => self.microseconds.saturating_sub(10),
+            _ => self.microseconds,
+        };
+        if self.microseconds < SERVO_LOW {
+            self.microseconds = SERVO_LOW;
+        }
+        if self.microseconds > SERVO_HIGH {
+            self.microseconds = SERVO_LOW;
         }
     }
 
