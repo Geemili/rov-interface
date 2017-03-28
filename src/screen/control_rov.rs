@@ -49,10 +49,10 @@ impl RovControl {
             rov: rov,
             mock_rov: MockRov::new(),
             renderables: vec![
-                MotorRenderable::new(0, [50.0, 50.0], [125.0, 50.0]),
-                MotorRenderable::new(1, [50.0, 75.0], [125.0, 75.0]),
-                MotorRenderable::new(2, [75.0, 100.0], [75.0, 175.0]),
-                MotorRenderable::new(3, [100.0, 100.0], [100.0, 175.0]),
+                MotorRenderable::new(0, [30.0, 50.0], [230.0, 50.0]),
+                MotorRenderable::new(1, [30.0, 100.0], [230.0, 100.0]),
+                MotorRenderable::new(2, [ 75.0, 200.0], [ 75.0, 400.0]),
+                MotorRenderable::new(3, [185.0, 200.0], [185.0, 400.0]),
             ],
         }
     }
