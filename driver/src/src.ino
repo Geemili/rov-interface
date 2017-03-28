@@ -166,7 +166,7 @@ void handle_command(Commands command, uint8_t *buffer)
       uint8_t servo_id = buffer[0];
       if (servo_id < NUM_MOTORS)
       {
-        int16_t microseconds = (buffer[1] << 8) | buffer[0];
+        int16_t microseconds = (buffer[1] << 8) | buffer[2];
         servos[servo_id].writeMicroseconds(microseconds);
         say_servo(servo_id, microseconds);
         break;
