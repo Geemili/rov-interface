@@ -12,6 +12,10 @@
 #define MAX_CONTROL_SIGNAL 1100
 #define MIN_CONTROL_SIGNAL 1900
 
+#define MIN_SERVO 1000
+#define MID_SERVO 1500
+#define MAX_SERVO 2000
+
 #ifndef INT16_MIN
 #define INT16_MIN -32768
 #endif
@@ -178,7 +182,7 @@ void handle_command(Commands command, uint8_t *buffer)
 }
 
 void motors_stop() {
-    int16_t stop_signal = MIN_CONTROL_SIGNAL + MAX_CONTROL_SIGNAL / 2;
+    int16_t stop_signal = (MIN_CONTROL_SIGNAL + MAX_CONTROL_SIGNAL) / 2;
     for (uint8_t i = 0; i < NUM_MOTORS; i++) {
         // Write the stop signal, which is exactly in the middle of the control
         // signal range
@@ -188,7 +192,7 @@ void motors_stop() {
 }
 
 void servos_reset() {
-    int16_t microseconds = MIN_CONTROL_SIGNAL + MAX_CONTROL_SIGNAL / 2;
+    int16_t microseconds = MID_SERVO;
     for (uint8_t i = 0; i < NUM_SERVOS; i++) {
         // Write the stop signal, which is exactly in the middle of the control
         // signal range

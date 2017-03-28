@@ -15,7 +15,7 @@ impl MockRov {
     pub fn new() -> MockRov {
         MockRov {
             motors: [0; 6],
-            servos: [0; 2],
+            servos: [1500; 2], // Start it at the middle
             robot_is_on: true,
             light_relay: false,
             sampler_relay: false,

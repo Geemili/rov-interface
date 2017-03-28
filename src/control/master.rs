@@ -18,7 +18,7 @@ impl MasterPower {
             button: button,
             master_power: true,
             was_pressed: false,
-            should_send: false,
+            should_send: true,
         }
     }
 }
