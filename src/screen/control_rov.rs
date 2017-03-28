@@ -3,7 +3,6 @@ use rov::Rov;
 use mock::MockRov;
 use screen::{Engine, Screen, Trans};
 use time::{PreciseTime, Duration};
-use vecmath;
 use sdl2::pixels::Color;
 use util::{draw_text, draw_text_ext};
 use ::control::Control;
@@ -50,11 +49,10 @@ impl RovControl {
             rov: rov,
             mock_rov: MockRov::new(),
             renderables: vec![
-                MotorRenderable {
-                    id: 0,
-                    min_pos: [50.0, 50.0],
-                    max_pos: [250.0, 50.0],
-                }
+                MotorRenderable::new(0, [50.0, 50.0], [125.0, 50.0]),
+                MotorRenderable::new(1, [50.0, 75.0], [125.0, 75.0]),
+                MotorRenderable::new(2, [75.0, 100.0], [75.0, 175.0]),
+                MotorRenderable::new(3, [100.0, 100.0], [100.0, 175.0]),
             ],
         }
     }
@@ -146,68 +144,6 @@ impl Screen for RovControl {
                       "Sampler",
                       (180, 500, 50, 30).into());
 
-        {
-            use control_state::{MOTOR_1, MOTOR_2, MOTOR_3, MOTOR_4, MOTOR_5, MOTOR_6};
-            // Render mock rov
-            let motor_1_start = [430.0, 260.0];
-            let motor_2_start = [370.0, 260.0];
-            let motor_3_start = [430.0, 340.0];
-            let motor_4_start = [370.0, 340.0];
-            let motor_5_start = [500.0, 300.0];
-            let motor_6_start = [560.0, 300.0];
-
-            let multiplier = 60.0 / i16::max_value() as f64;
-            let motor_1_vector = vecmath::vec2_scale([-0.5, -0.5],
-                                                     self.mock_rov.motors[MOTOR_1 as usize] as f64 *
-                                                     multiplier);
-            let motor_2_vector = vecmath::vec2_scale([0.5, -0.5],
-                                                     self.mock_rov.motors[MOTOR_2 as usize] as f64 *
-                                                     multiplier);
-            let motor_3_vector = vecmath::vec2_scale([-0.5, 0.5],
-                                                     self.mock_rov.motors[MOTOR_3 as usize] as f64 *
-                                                     multiplier);
-            let motor_4_vector = vecmath::vec2_scale([0.5, 0.5],
-                                                     self.mock_rov.motors[MOTOR_4 as usize] as f64 *
-                                                     multiplier);
-            let motor_5_vector = vecmath::vec2_scale([0.0, 1.0],
-                                                     self.mock_rov.motors[MOTOR_5 as usize] as f64 *
-                                                     multiplier);
-            let motor_6_vector = vecmath::vec2_scale([0.0, 1.0],
-                                                     self.mock_rov.motors[MOTOR_6 as usize] as f64 *
-                                                     multiplier);
-            let motor_1_end = vecmath::vec2_add(motor_1_start, motor_1_vector);
-            let motor_2_end = vecmath::vec2_add(motor_2_start, motor_2_vector);
-            let motor_3_end = vecmath::vec2_add(motor_3_start, motor_3_vector);
-            let motor_4_end = vecmath::vec2_add(motor_4_start, motor_4_vector);
-            let motor_5_end = vecmath::vec2_add(motor_5_start, motor_5_vector);
-            let motor_6_end = vecmath::vec2_add(motor_6_start, motor_6_vector);
-
-            engine.renderer
-                .draw_line((motor_1_start[0] as i32, motor_1_start[1] as i32).into(),
-                           (motor_1_end[0] as i32, motor_1_end[1] as i32).into())
-                .unwrap();
-            engine.renderer
-                .draw_line((motor_2_start[0] as i32, motor_2_start[1] as i32).into(),
-                           (motor_2_end[0] as i32, motor_2_end[1] as i32).into())
-                .unwrap();
-            engine.renderer
-                .draw_line((motor_3_start[0] as i32, motor_3_start[1] as i32).into(),
-                           (motor_3_end[0] as i32, motor_3_end[1] as i32).into())
-                .unwrap();
-            engine.renderer
-                .draw_line((motor_4_start[0] as i32, motor_4_start[1] as i32).into(),
-                           (motor_4_end[0] as i32, motor_4_end[1] as i32).into())
-                .unwrap();
-            engine.renderer
-                .draw_line((motor_5_start[0] as i32, motor_5_start[1] as i32).into(),
-                           (motor_5_end[0] as i32, motor_5_end[1] as i32).into())
-                .unwrap();
-            engine.renderer
-                .draw_line((motor_6_start[0] as i32, motor_6_start[1] as i32).into(),
-                           (motor_6_end[0] as i32, motor_6_end[1] as i32).into())
-                .unwrap();
-        }
-
         for renderable in self.renderables.iter() {
             renderable.render(&self.mock_rov, engine);
         }
@@ -225,6 +161,14 @@ struct MotorRenderable {
 }
 
 impl MotorRenderable {
+    pub fn new(id: u8, min_pos: [f32; 2], max_pos: [f32; 2]) -> Self {
+        MotorRenderable {
+            id: id,
+            max_pos: max_pos,
+            min_pos: min_pos,
+        }
+    }
+
     pub fn render(&self, mock: &MockRov, engine: &mut Engine) {
         use vecmath::{vec2_add, vec2_mul, vec2_normalized, vec2_scale, vec2_sub, vec2_len};
         let motor_start = vec2_add(self.max_pos, self.min_pos);

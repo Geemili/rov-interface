@@ -15,7 +15,6 @@ extern crate gilrs;
 mod errors;
 mod rov;
 mod mock;
-mod control_state;
 mod util;
 mod screen;
 mod control;
