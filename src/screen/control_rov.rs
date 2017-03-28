@@ -13,6 +13,7 @@ pub struct RovControl {
     last_write_time: PreciseTime,
     rov: Rov,
     mock_rov: MockRov,
+    renderables: Vec<MotorRenderable>,
 }
 
 impl RovControl {
@@ -48,6 +49,13 @@ impl RovControl {
             last_write_time: PreciseTime::now(),
             rov: rov,
             mock_rov: MockRov::new(),
+            renderables: vec![
+                MotorRenderable {
+                    id: 0,
+                    min_pos: [50.0, 50.0],
+                    max_pos: [250.0, 50.0],
+                }
+            ],
         }
     }
 }
@@ -101,7 +109,7 @@ impl Screen for RovControl {
         }
         print!("      ");
         use std::io::{stdout,Write};
-        stdout().flush();
+        let _ = stdout().flush();
 
         engine.renderer.set_draw_color(Color::RGB(255, 128, 128));
         engine.renderer.clear();
@@ -200,8 +208,43 @@ impl Screen for RovControl {
                 .unwrap();
         }
 
+        for renderable in self.renderables.iter() {
+            renderable.render(&self.mock_rov, engine);
+        }
+
         engine.renderer.present();
 
         Trans::None
     }
 }
+
+struct MotorRenderable {
+    pub id: u8,
+    pub max_pos: [f32; 2],
+    pub min_pos: [f32; 2],
+}
+
+impl MotorRenderable {
+    pub fn render(&self, mock: &MockRov, engine: &mut Engine) {
+        use vecmath::{vec2_add, vec2_mul, vec2_normalized, vec2_scale, vec2_sub, vec2_len};
+        let motor_start = vec2_add(self.max_pos, self.min_pos);
+        let motor_start = vec2_mul(motor_start, [0.5, 0.5]);
+        let forward_vector = vec2_sub(self.max_pos, motor_start);
+        let motor_direction = vec2_normalized(forward_vector);
+        let motor_len = vec2_len(forward_vector);
+
+        let value = mock.motors[self.id as usize] as f32;
+        let value = value / (i16::max_value() as f32);
+
+        let amount = motor_len * value;
+
+        let motor_end = vec2_scale(motor_direction, amount);
+        let motor_end = vec2_add(motor_start, motor_end);
+
+        engine.renderer
+            .draw_line((motor_start[0] as i32, motor_start[1] as i32).into(),
+                       (motor_end[0] as i32, motor_end[1] as i32).into())
+            .unwrap();
+    }
+}
+

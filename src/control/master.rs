@@ -16,7 +16,7 @@ impl MasterPower {
     pub fn new(button: gilrs::Button) -> Self {
         MasterPower {
             button: button,
-            master_power: false,
+            master_power: true,
             was_pressed: false,
             should_send: false,
         }

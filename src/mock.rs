@@ -2,7 +2,6 @@
 /// A mock ROV that reflects the state of the ROV.
 
 use rov::RovResponse;
-use time::{self, Tm, Duration};
 
 pub struct MockRov {
     pub motors: [i16; 6],
