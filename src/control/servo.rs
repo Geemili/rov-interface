@@ -36,8 +36,8 @@ impl Control for Servo {
         let decrease = input.is_pressed(self.decrease_button);
 
         self.microseconds = match (increase, decrease) {
-            (true, false) => self.microseconds.saturating_add(10),
-            (false, true) => self.microseconds.saturating_sub(10),
+            (true, false) => self.microseconds + 40,
+            (false, true) => self.microseconds - 40,
             _ => self.microseconds,
         };
         if self.microseconds < SERVO_LOW {
