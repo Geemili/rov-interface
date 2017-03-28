@@ -44,7 +44,7 @@ impl Control for Servo {
             self.microseconds = SERVO_LOW;
         }
         if self.microseconds > SERVO_HIGH {
-            self.microseconds = SERVO_LOW;
+            self.microseconds = SERVO_HIGH;
         }
     }
 
