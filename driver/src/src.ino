@@ -2,7 +2,7 @@
 #include <Arduino.h>
 #include <Servo.h>
 #include <Adafruit_Sensor.h>
-#include <Adafruit_BNO055.h>
+#include <BNO055.h>
 #include "commands.h"
 #include "main.h"
 
@@ -36,14 +36,14 @@ Servo motors[NUM_MOTORS];
 Servo servos[NUM_SERVOS];
 bool robot_is_on;
 
-Adafruit_BNO055 bmo_compass = Adafruit_BNO055(55);
+BNO055 bno_compass = BNO055(55);
 bool compass_enabled;
 
 void setup()
 {
   Serial.begin(115200);
   parser_state = ReceivingCommand;
-  compass_enabled = bmo_compass.begin();
+  compass_enabled = bno_compass.begin();
   if(!compass_enabled) {
       say_compass_disabled();
   }
@@ -224,9 +224,17 @@ void master_off() {
 
 void update_compass() {
     if (!compass_enabled) return;
-    sensors_event_t event;
-    bmo_compass.getEvent(&event);
 
-    say_compass_orientation(event.orientation.x, event.orientation.y, event.orientation.z);
+    uint8_t compass_buffer[6];
+    memset(compass_buffer, 0, 6);
+    bno_compass.readLen(BNO055::BNO055_EULER_H_LSB_ADDR, compass_buffer, 6);
+
+    int16_t x, y, z;
+
+    x = ((int16_t)compass_buffer[0]) | (((int16_t)compass_buffer[1]) << 8);
+    y = ((int16_t)compass_buffer[2]) | (((int16_t)compass_buffer[3]) << 8);
+    z = ((int16_t)compass_buffer[4]) | (((int16_t)compass_buffer[5]) << 8);
+
+    say_compass_orientation(x, y, z);
 }
 
