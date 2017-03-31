@@ -25,7 +25,7 @@ run: build
     cargo run
 
 upload: build
-    pio run --project-dir $DRIVER_DIR --target upload --environment promini
+    pio run --project-dir {{pio-dir}} --target upload --environment promini
 
 publish: build-release
     mkdir -pf {{out}}/dist
