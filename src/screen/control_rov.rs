@@ -58,6 +58,7 @@ impl RovControl {
                 Box::new(ServoRenderable::new(1, [250.0, 140.0], [360.0, 140.0])),
                 Box::new(ServoRenderable::new(1, [250.0,  10.0], [360.0,  10.0])),
                 Box::new(DualServoRenderable::new([1, 0], [250.0,  20.0], [360.0, 130.0])),
+                Box::new(CompassRenderable::new([400, 400])),
             ],
         }
     }
@@ -266,6 +267,51 @@ impl Renderable for DualServoRenderable {
 
         let rect = (x as i32 - 5, y as i32 - 5, 10, 10).into();
         engine.renderer.fill_rect(rect).unwrap();
+    }
+}
+
+struct CompassRenderable {
+    pub top_left: [i32; 2],
+}
+
+impl CompassRenderable {
+    pub fn new(top_left: [i32; 2]) -> Self {
+        CompassRenderable{
+            top_left: top_left,
+        }
+    }
+}
+
+impl Renderable for CompassRenderable {
+    fn render(&self, mock: &MockRov, engine: &mut Engine) {
+        let rect = (self.top_left[0], self.top_left[1], 200, 200).into();
+        engine.renderer.draw_rect(rect).unwrap();
+
+        let text_rect = (self.top_left[0]+10, self.top_left[1]+10, 180, 20).into();
+        draw_text_ext(&mut engine.renderer, &engine.font, "Compass", text_rect);
+
+        if mock.compass_enabled {
+            let text_rect = (self.top_left[0]+10, self.top_left[1]+30, 25, 20).into();
+            draw_text_ext(&mut engine.renderer, &engine.font, "X:", text_rect);
+            let x_string = format!("{}", mock.compass_orientation[0]);
+            let text_rect = (self.top_left[0]+35, self.top_left[1]+30, 155, 20).into();
+            draw_text_ext(&mut engine.renderer, &engine.font, &x_string, text_rect);
+
+            let text_rect = (self.top_left[0]+10, self.top_left[1]+50, 25, 20).into();
+            draw_text_ext(&mut engine.renderer, &engine.font, "Y:", text_rect);
+            let x_string = format!("{}", mock.compass_orientation[1]);
+            let text_rect = (self.top_left[0]+35, self.top_left[1]+50, 155, 20).into();
+            draw_text_ext(&mut engine.renderer, &engine.font, &x_string, text_rect);
+
+            let text_rect = (self.top_left[0]+10, self.top_left[1]+80, 25, 20).into();
+            draw_text_ext(&mut engine.renderer, &engine.font, "Z:", text_rect);
+            let x_string = format!("{}", mock.compass_orientation[0]);
+            let text_rect = (self.top_left[0]+35, self.top_left[1]+80, 155, 20).into();
+            draw_text_ext(&mut engine.renderer, &engine.font, &x_string, text_rect);
+        } else {
+            let text_rect = (self.top_left[0]+10, self.top_left[1]+50, 180, 20).into();
+            draw_text_ext(&mut engine.renderer, &engine.font, "Not Found", text_rect);
+        }
     }
 }
 
