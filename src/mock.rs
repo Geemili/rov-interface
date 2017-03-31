@@ -8,7 +8,8 @@ pub struct MockRov {
     pub servos: [i16; 2],
     pub robot_is_on: bool,
     pub light_relay: bool,
-    pub sampler_relay: bool,
+    pub compass_orientation: [i16; 3],
+    pub compass_enabled: bool,
 }
 
 impl MockRov {
@@ -18,7 +19,8 @@ impl MockRov {
             servos: [1500; 2], // Start it at the middle
             robot_is_on: true,
             light_relay: false,
-            sampler_relay: false,
+            compass_orientation: [0,0,0],
+            compass_enabled: false,
         }
     }
 
@@ -35,8 +37,8 @@ impl MockRov {
                     self.motors[id as usize] = throttle;
                 }
             }
-            RovResponse::CollectingSamples { .. } => self.sampler_relay = true,
-            RovResponse::CollectingSamplesNot => self.sampler_relay = false,
+            RovResponse::CompassOrientation { x, y, z } => self.compass_orientation = [x, y, z],
+            RovResponse::CompassDisabled  => self.compass_enabled = false,
             RovResponse::LightsOn => self.light_relay = true,
             RovResponse::LightsOff => self.light_relay = false,
             RovResponse::MasterOn => self.robot_is_on = true,

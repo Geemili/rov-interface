@@ -7,7 +7,6 @@ use serialport::{self, SerialPort};
 use std::sync::mpsc::{self, Sender, Receiver};
 
 const COMMAND_CONTROL_MOTOR: u8 = 0x10;
-const COMMAND_COLLECT_SAMPLES: u8 = 0x20;
 const COMMAND_LIGHTS_ON: u8 = 0x31;
 const COMMAND_LIGHTS_OFF: u8 = 0x30;
 const COMMAND_MASTER_ON: u8 = 0x40;
@@ -17,7 +16,6 @@ const COMMAND_CONTROL_SERVO: u8 = 0x66;
 #[derive(Clone, Debug)]
 pub enum RovCommand {
     ControlMotor { id: u8, throttle: i16 },
-    CollectSamples { amount: u8 },
     LightsOn,
     LightsOff,
     MasterOn,
@@ -34,7 +32,6 @@ impl RovCommand {
                      ((throttle >> 8) & 0xFF) as u8,
                      (throttle & 0xFF) as u8]
             }
-            RovCommand::CollectSamples { amount } => vec![COMMAND_COLLECT_SAMPLES, amount],
             RovCommand::LightsOn => vec![COMMAND_LIGHTS_ON],
             RovCommand::LightsOff => vec![COMMAND_LIGHTS_OFF],
             RovCommand::MasterOn => vec![COMMAND_MASTER_ON],
@@ -45,8 +42,8 @@ impl RovCommand {
 }
 
 const RESPONSE_MOTOR: u8 = 0x10;
-const RESPONSE_COLLECTING_SAMPLES: u8 = 0x20;
-const RESPONSE_COLLECTING_SAMPLES_NOT: u8 = 0x21;
+const RESPONSE_COMPASS_ORIENTATION: u8 = 0x20;
+const RESPONSE_COMPASS_DISABLED: u8 = 0x21;
 const RESPONSE_LIGHTS_ON: u8 = 0x31;
 const RESPONSE_LIGHTS_OFF: u8 = 0x30;
 const RESPONSE_MASTER_ON: u8 = 0x40;
@@ -56,8 +53,8 @@ const RESPONSE_SERVO: u8 = 0x66;
 #[derive(Debug)]
 pub enum RovResponse {
     Motor { id: u8, throttle: i16 },
-    CollectingSamples { time_left: u16 },
-    CollectingSamplesNot,
+    CompassOrientation { x: i16, y: i16, z: i16 },
+    CompassDisabled,
     LightsOn,
     LightsOff,
     MasterOn,
@@ -77,8 +74,8 @@ impl RovResponse {
     pub fn response_length(command_byte: u8) -> Option<usize> {
         match command_byte {
             RESPONSE_MOTOR => Some(3),
-            RESPONSE_COLLECTING_SAMPLES => Some(2),
-            RESPONSE_COLLECTING_SAMPLES_NOT => Some(0),
+            RESPONSE_COMPASS_ORIENTATION => Some(6),
+            RESPONSE_COMPASS_DISABLED  => Some(0),
             RESPONSE_LIGHTS_ON => Some(0),
             RESPONSE_LIGHTS_OFF => Some(0),
             RESPONSE_MASTER_ON => Some(0),
@@ -106,11 +103,13 @@ impl RovResponse {
                 throttle: i16_from_bytes(buffer[2], buffer[3]),
             },
 
-            RESPONSE_COLLECTING_SAMPLES => RovResponse::CollectingSamples {
-                time_left: ((buffer[1] as u16) << 8) | (buffer[2] as u16),
+            RESPONSE_COMPASS_ORIENTATION => RovResponse::CompassOrientation {
+                x: ((buffer[1] as i16) << 8) | (buffer[2] as i16),
+                y: ((buffer[3] as i16) << 8) | (buffer[4] as i16),
+                z: ((buffer[5] as i16) << 8) | (buffer[6] as i16),
             },
 
-            RESPONSE_COLLECTING_SAMPLES_NOT => RovResponse::CollectingSamplesNot,
+            RESPONSE_COMPASS_DISABLED => RovResponse::CompassDisabled,
             RESPONSE_LIGHTS_ON => RovResponse::LightsOn,
             RESPONSE_LIGHTS_OFF => RovResponse::LightsOff,
             RESPONSE_MASTER_ON => RovResponse::MasterOn,

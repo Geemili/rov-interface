@@ -138,17 +138,6 @@ impl Screen for RovControl {
                       "Lights",
                       (120, 500, 50, 30).into());
 
-        let rect = (180, 450, 50, 50).into();
-        if self.mock_rov.sampler_relay {
-            engine.renderer.fill_rect(rect).unwrap()
-        } else {
-            engine.renderer.draw_rect(rect).unwrap()
-        }
-        draw_text_ext(&mut engine.renderer,
-                      &engine.font,
-                      "Sampler",
-                      (180, 500, 50, 30).into());
-
         for renderable in self.renderables.iter() {
             renderable.render(&self.mock_rov, engine);
         }
