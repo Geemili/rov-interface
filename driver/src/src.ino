@@ -1,13 +1,12 @@
 
 #include <Arduino.h>
 #include <Servo.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_BNO055.h>
 #include "commands.h"
 #include "main.h"
 
 #define LIGHTS_RELAY_PIN 13
-
-#define SAMPLER_RELAY_PIN 4
-#define SAMPLER_SINGLE_SHOT_MS 2000
 
 #define MAX_CONTROL_SIGNAL 1100
 #define MIN_CONTROL_SIGNAL 1900
@@ -35,14 +34,19 @@ ParserState parser_state;
 
 Servo motors[NUM_MOTORS];
 Servo servos[NUM_SERVOS];
-bool turn_off_motor;
-uint32_t turn_off_motor_time;
 bool robot_is_on;
+
+Adafruit_BNO055 bmo_compass = Adafruit_BNO055(55);
+bool compass_enabled;
 
 void setup()
 {
   Serial.begin(115200);
   parser_state = ReceivingCommand;
+  compass_enabled = bmo_compass.begin();
+  if(!compass_enabled) {
+      say_compass_disabled();
+  }
   master_on();
 }
 
@@ -102,14 +106,7 @@ void loop()
     }
   }
 
-  if (turn_off_motor) {
-      say_collecting_samples(turn_off_motor_time-millis());
-      if (millis() >= turn_off_motor_time) {
-          digitalWrite(SAMPLER_RELAY_PIN, LOW);
-          turn_off_motor = false;
-          say_collecting_samples_not();
-      }
-  }
+  update_compass();
 }
 
 void handle_command(Commands command, uint8_t *buffer)
@@ -134,18 +131,6 @@ void handle_command(Commands command, uint8_t *buffer)
         break;
       }
       // TODO: Send back error message when motor_id is greater then 6
-      break;
-    }
-    case CollectSamples: {
-      uint32_t amount = buffer[0] * SAMPLER_SINGLE_SHOT_MS;
-      if (turn_off_motor) {
-        turn_off_motor_time += amount;
-      } else {
-        digitalWrite(SAMPLER_RELAY_PIN, HIGH);
-        turn_off_motor = true;
-        turn_off_motor_time = millis() + amount;
-      }
-      say_collecting_samples(turn_off_motor_time - millis());
       break;
     }
     case LightsOn: {
@@ -209,12 +194,6 @@ void master_on() {
   digitalWrite(LIGHTS_RELAY_PIN, LOW);
   say_lights_off();
 
-  pinMode(SAMPLER_RELAY_PIN, OUTPUT);
-  digitalWrite(SAMPLER_RELAY_PIN, LOW);
-  turn_off_motor = false;
-  turn_off_motor_time = 0;
-  say_collecting_samples_not();
-
   /* ## Turn motors on ## */
   motors[0].attach(5);
   motors[1].attach(6);
@@ -237,12 +216,17 @@ void master_off() {
   digitalWrite(LIGHTS_RELAY_PIN, LOW);
   say_lights_off();
 
-  digitalWrite(SAMPLER_RELAY_PIN, LOW);
-  say_collecting_samples_not();
-
   motors_stop();
   servos_reset();
 
   say_master_off();
+}
+
+void update_compass() {
+    if (!compass_enabled) return;
+    sensors_event_t event;
+    bmo_compass.getEvent(&event);
+
+    say_compass_orientation(event.orientation.x, event.orientation.y, event.orientation.z);
 }
 
