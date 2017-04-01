@@ -58,7 +58,7 @@ impl RovControl {
                 Box::new(ServoRenderable::new(1, [250.0, 140.0], [360.0, 140.0])),
                 Box::new(ServoRenderable::new(1, [250.0,  10.0], [360.0,  10.0])),
                 Box::new(DualServoRenderable::new([1, 0], [250.0,  20.0], [360.0, 130.0])),
-                Box::new(CompassRenderable::new([400, 400])),
+                Box::new(CompassRenderable::new([400, 240])),
             ],
         }
     }
