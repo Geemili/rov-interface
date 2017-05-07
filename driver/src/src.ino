@@ -36,7 +36,7 @@ Servo motors[NUM_MOTORS];
 Servo servos[NUM_SERVOS];
 bool robot_is_on;
 
-BNO055 bno_compass = BNO055(55);
+BNO055 bno_compass = BNO055(0, 55);
 bool compass_enabled;
 
 void setup()
