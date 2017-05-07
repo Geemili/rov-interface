@@ -102,12 +102,16 @@ impl Screen for RovControl {
         self.mock_rov.apply_responses(&responses);
         pint!("\r");
         for r in responses {
-            use rov::RovResponse::{Motor,LightsOn,LightsOff};
+            use rov::RovResponse::*;
             let letter = match r {
                 Motor {..} => 'm',
                 LightsOn => 'L',
                 LightsOff => 'l',
-                _ => '*',
+                MasterOn => 'O',
+                MasterOff => 'o',
+                CompassOrientation {..} => 'C',
+                CompassDisabled => 'c',
+                Servo {..} => 'S',
             };
             print!("{}", letter);
         }
