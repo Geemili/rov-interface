@@ -24,7 +24,7 @@ impl MasterPower {
 }
 
 impl Control for MasterPower {
-    fn update(&mut self, input: &gilrs::GamepadState) {
+    fn update(&mut self, input: &gilrs::GamepadState, _delta: f64) {
         self.should_send = false;
         let is_pressed = input.is_pressed(self.button);
         match (self.was_pressed, is_pressed) {

@@ -68,7 +68,7 @@ pub struct Motor {
 }
 
 impl Control for Motor {
-    fn update(&mut self, input: &gilrs::GamepadState) {
+    fn update(&mut self, input: &gilrs::GamepadState, _delta: f64) {
         self.prev_thrust = self.thrust;
         let forward = input.value(gilrs::Axis::LeftStickY);
         let sideways = input.value(gilrs::Axis::LeftStickX);
