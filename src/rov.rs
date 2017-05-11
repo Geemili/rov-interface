@@ -156,14 +156,16 @@ impl Rov {
                 error_trace.push_str("Error: ");
                 error_trace.push_str(&e.to_string());
                 for e in e.iter().skip(1) {
-                     error_trace.push_str("\nCause: ");
-                     error_trace.push_str(&e.to_string());
+                    error_trace.push_str("\nCause: ");
+                    error_trace.push_str(&e.to_string());
                 }
 
                 // If there is a backtrace, print it.
-                let backtrace = format!("{:?}",e.backtrace());
+                let backtrace = format!("{:?}", e.backtrace());
 
-                error!("An error was returned to rov thread."; "error_trace" => error_trace, "backtrace" => backtrace);
+                error!("An error was returned to rov thread.";
+                      "error_trace" => error_trace,
+                      "backtrace" => backtrace);
             }
 
         });

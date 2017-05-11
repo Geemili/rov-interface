@@ -18,7 +18,7 @@ pub struct PortSelect {
 impl PortSelect {
     pub fn new() -> PortSelect {
         PortSelect {
-            ports: serialport::available_ports().expect("Couldn't get available ports"),
+            ports: vec![],
             selected: 0,
             last_poll_time: PreciseTime::now(),
         }
@@ -42,7 +42,7 @@ impl Screen for PortSelect {
         Ok(())
     }
 
-    fn update(&mut self, engine: &mut Engine, _delta: f64) -> Trans {
+    fn update(&mut self, engine: &mut Engine, _delta: f64) -> Result<Trans> {
         for (_id, event) in engine.controllers.poll_events() {
             use gilrs::Event::ButtonReleased as Press;
             use gilrs::Button::{DPadUp, DPadDown, South};
@@ -55,7 +55,7 @@ impl Screen for PortSelect {
                         let port = self.ports[self.selected].port_name.clone().into();
                         let rov = Rov::new(port);
                         let control_screen = Box::new(RovControl::new(rov));
-                        return Trans::Switch(control_screen);
+                        return Ok(Trans::Switch(control_screen));
                     }
                 }
                 _ => (),
@@ -73,18 +73,18 @@ impl Screen for PortSelect {
                         let port = self.ports[self.selected].port_name.clone().into();
                         let rov = Rov::new(port);
                         let control_screen = Box::new(RovControl::new(rov));
-                        return Trans::Switch(control_screen);
+                        return Ok(Trans::Switch(control_screen));
                     }
                 }
                 Event::Quit { .. } |
-                Event::KeyUp { keycode: Some(Keycode::Escape), .. } => return Trans::Quit,
+                Event::KeyUp { keycode: Some(Keycode::Escape), .. } => return Ok(Trans::Quit),
                 _ => (),
             }
         }
 
         if self.last_poll_time.to(PreciseTime::now()) >=
            Duration::milliseconds(TIME_BETWEEN_POLLING_PORTS_MS) {
-            self.ports = serialport::available_ports().expect("Couldn't list of ports");
+            self.ports = serialport::available_ports().chain_err(|| "Couldn't list of ports")?;
             self.last_poll_time = PreciseTime::now();
             if self.selected >= self.ports.len() {
                 self.selected = self.ports.len() - 1;
@@ -115,6 +115,6 @@ impl Screen for PortSelect {
 
         engine.renderer.present();
 
-        Trans::None
+        Ok(Trans::None)
     }
 }

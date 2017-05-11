@@ -69,15 +69,21 @@ impl Screen for RovControl {
         self.controls.push(Box::new(::control::servo::Servo::new(0,
                                                                  gilrs::Button::DPadDown,
                                                                  gilrs::Button::DPadUp,
-                                                                 engine.config.control.servo_tilt.speed)));
+                                                                 engine.config
+                                                                     .control
+                                                                     .servo_tilt
+                                                                     .speed)));
         self.controls.push(Box::new(::control::servo::Servo::new(1,
                                                                  gilrs::Button::DPadRight,
                                                                  gilrs::Button::DPadLeft,
-                                                                 engine.config.control.servo_pan.speed)));
+                                                                 engine.config
+                                                                     .control
+                                                                     .servo_pan
+                                                                     .speed)));
         Ok(())
     }
 
-    fn update(&mut self, engine: &mut Engine, delta: f64) -> Trans {
+    fn update(&mut self, engine: &mut Engine, delta: f64) -> Result<Trans> {
         for (_, _controller_event) in engine.controllers.poll_events() {}
 
         for event in engine.event_pump.poll_iter() {
@@ -86,7 +92,7 @@ impl Screen for RovControl {
 
             match event {
                 Event::Quit { .. } |
-                Event::KeyUp { keycode: Some(Keycode::Escape), .. } => return Trans::Quit,
+                Event::KeyUp { keycode: Some(Keycode::Escape), .. } => return Ok(Trans::Quit),
                 _ => (),
             }
         }
@@ -102,7 +108,7 @@ impl Screen for RovControl {
                 }
 
                 for command in commands.iter() {
-                    self.rov.send_command(command.clone()).expect("Failed to update rov");
+                    self.rov.send_command(command.clone()).chain_err(|| "Failed to update rov")?;
                 }
 
                 self.last_write_time = now;
@@ -160,7 +166,7 @@ impl Screen for RovControl {
 
         engine.renderer.present();
 
-        Trans::None
+        Ok(Trans::None)
     }
 }
 

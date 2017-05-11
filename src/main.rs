@@ -15,7 +15,9 @@ extern crate gilrs;
 extern crate serde_derive;
 extern crate serde;
 extern crate toml;
-#[macro_use(o, kv, slog_log, slog_info, slog_error, slog_record, slog_record_static, slog_b, slog_kv)]
+#[macro_use(o, kv, slog_b, slog_kv,
+           slog_record, slog_record_static,
+           slog_log, slog_info, slog_error)]
 extern crate slog;
 extern crate slog_term;
 extern crate slog_async;
@@ -51,7 +53,7 @@ fn main() {
 
     let root_drain = slog::Duplicate(json_drain, term_drain).fuse();
 
-    let root_logger =  slog::Logger::root(root_drain, o!("version" => env!("CARGO_PKG_VERSION")));
+    let root_logger = slog::Logger::root(root_drain, o!("version" => env!("CARGO_PKG_VERSION")));
 
     let _guard = slog_scope::set_global_logger(root_logger);
 
@@ -62,13 +64,15 @@ fn main() {
         error_trace.push_str("Error: ");
         error_trace.push_str(&e.to_string());
         for e in e.iter().skip(1) {
-             error_trace.push_str("\nCause: ");
-             error_trace.push_str(&e.to_string());
+            error_trace.push_str("\nCause: ");
+            error_trace.push_str(&e.to_string());
         }
 
         // If there is a backtrace, print it.
-        let backtrace = format!("{:?}",e.backtrace());
-        error!("An error was returned to main."; "error_trace" => error_trace, "backtrace" => backtrace);
+        let backtrace = format!("{:?}", e.backtrace());
+        error!("An error was returned to main.";
+              "error_trace" => error_trace,
+              "backtrace" => backtrace);
 
         ::std::process::exit(1);
     }
@@ -136,7 +140,8 @@ fn run() -> Result<()> {
         let delta = (elapsed.as_secs() as f64) + (elapsed.subsec_nanos() as f64 / 1_000_000_000.0);
         prev_time = ::std::time::Instant::now();
 
-        let current_screen = match screen.update(&mut engine, delta) {
+        let trans = screen.update(&mut engine, delta).chain_err(|| "Failed to update screen")?;
+        let current_screen = match trans {
             screen::Trans::Quit => break,
             screen::Trans::None => screen,
             screen::Trans::Switch(mut new_screen) => {
