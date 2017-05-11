@@ -15,6 +15,15 @@ extern crate gilrs;
 extern crate serde_derive;
 extern crate serde;
 extern crate toml;
+#[macro_use(o, kv, slog_b, slog_kv,
+           slog_record, slog_record_static,
+           slog_log, slog_info, slog_error)]
+extern crate slog;
+extern crate slog_term;
+extern crate slog_async;
+extern crate slog_json;
+#[macro_use]
+extern crate slog_scope;
 
 pub mod errors;
 mod rov;
@@ -27,17 +36,43 @@ mod config;
 use errors::*;
 
 fn main() {
-    if let Err(ref e) = run() {
-        println!("Error: {}", e);
+    use slog::Drain;
 
+    let decorator = slog_term::TermDecorator::new().build();
+    let term_drain = slog_term::FullFormat::new(decorator).build().fuse();
+    let term_drain = slog_async::Async::new(term_drain).build().fuse();
+
+    let log_file = ::std::fs::OpenOptions::new()
+        .create(true)
+        .write(true)
+        .append(true)
+        .open("log.json")
+        .expect("Couldn't open log file!");
+
+    let json_drain = ::std::sync::Mutex::new(slog_json::Json::default(log_file).fuse());
+
+    let root_drain = slog::Duplicate(json_drain, term_drain).fuse();
+
+    let root_logger = slog::Logger::root(root_drain, o!("version" => env!("CARGO_PKG_VERSION")));
+
+    let _guard = slog_scope::set_global_logger(root_logger);
+
+    info!("Application started"; "started_at" => format!("{}", time::now().rfc3339()));
+
+    if let Err(ref e) = run() {
+        let mut error_trace = String::new();
+        error_trace.push_str("Error: ");
+        error_trace.push_str(&e.to_string());
         for e in e.iter().skip(1) {
-            println!("Caused by: {}", e);
+            error_trace.push_str("\nCause: ");
+            error_trace.push_str(&e.to_string());
         }
 
         // If there is a backtrace, print it.
-        if let Some(backtrace) = e.backtrace() {
-            println!("backtrace: {:?}", backtrace);
-        }
+        let backtrace = format!("{:?}", e.backtrace());
+        error!("An error was returned to main.";
+              "error_trace" => error_trace,
+              "backtrace" => backtrace);
 
         ::std::process::exit(1);
     }
@@ -105,7 +140,8 @@ fn run() -> Result<()> {
         let delta = (elapsed.as_secs() as f64) + (elapsed.subsec_nanos() as f64 / 1_000_000_000.0);
         prev_time = ::std::time::Instant::now();
 
-        let current_screen = match screen.update(&mut engine, delta) {
+        let trans = screen.update(&mut engine, delta).chain_err(|| "Failed to update screen")?;
+        let current_screen = match trans {
             screen::Trans::Quit => break,
             screen::Trans::None => screen,
             screen::Trans::Switch(mut new_screen) => {

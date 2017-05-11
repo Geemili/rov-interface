@@ -12,7 +12,7 @@ pub enum Trans {
 
 pub trait Screen {
     fn init(&mut self, engine: &mut Engine) -> Result<()>;
-    fn update(&mut self, engine: &mut Engine, delta: f64) -> Trans;
+    fn update(&mut self, engine: &mut Engine, delta: f64) -> Result<Trans>;
 }
 
 use sdl2::EventPump;
