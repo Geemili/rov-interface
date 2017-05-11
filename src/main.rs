@@ -58,17 +58,17 @@ fn main() {
     info!("Application started"; "started_at" => format!("{}", time::now().rfc3339()));
 
     if let Err(ref e) = run() {
-        error!("error returned to main"; "error-chain" => e.to_string());
-        println!("Error: {}", e);
-
+        let mut error_trace = String::new();
+        error_trace.push_str("Error: ");
+        error_trace.push_str(&e.to_string());
         for e in e.iter().skip(1) {
-            println!("Caused by: {}", e);
+             error_trace.push_str("\nCause: ");
+             error_trace.push_str(&e.to_string());
         }
 
         // If there is a backtrace, print it.
-        if let Some(backtrace) = e.backtrace() {
-            println!("backtrace: {:?}", backtrace);
-        }
+        let backtrace = format!("{:?}",e.backtrace());
+        error!("An error was returned to main."; "error_trace" => error_trace, "backtrace" => backtrace);
 
         ::std::process::exit(1);
     }
