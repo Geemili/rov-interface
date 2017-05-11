@@ -24,7 +24,7 @@ build-release:
     pio run --project-dir {{pio-dir}}
 
 run: build-app
-    cargo run
+    env RUST_BACKTRACE=1 cargo run
 
 upload: build-driver
     pio run --project-dir {{pio-dir}} --target upload --environment promini

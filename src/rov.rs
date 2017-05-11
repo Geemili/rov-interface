@@ -152,16 +152,23 @@ impl Rov {
             if let Err(ref e) = Rov::start_device_thread(port_path,
                                                          command_receiver,
                                                          response_sender) {
-                println!("Error: {}", e);
 
+                let mut error_trace = String::new();
+                error_trace.push_str("Error: ");
+                error_trace.push_str(&e.to_string());
                 for e in e.iter().skip(1) {
-                    println!("Caused by: {}", e);
+                     error_trace.push_str("\nCause: ");
+                     error_trace.push_str(&e.to_string());
                 }
+
 
                 // If there is a backtrace, print it.
+                let backtrace = format!("{:?}",e.backtrace());
                 if let Some(backtrace) = e.backtrace() {
-                    println!("backtrace: {:?}", backtrace);
+//                    error!("found backtrace"; "backtrace" => format!("{:?}", backtrace));
                 }
+
+                error!("An error was returned to rov thread."; "error_trace" => error_trace, "backtrace" => backtrace);
 
                 ::std::process::exit(1);
             }

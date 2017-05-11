@@ -15,11 +15,12 @@ extern crate gilrs;
 extern crate serde_derive;
 extern crate serde;
 extern crate toml;
-#[macro_use]
+#[macro_use(o, kv, slog_log, slog_info, slog_error, slog_record, slog_record_static, slog_b, slog_kv)]
 extern crate slog;
 extern crate slog_term;
 extern crate slog_async;
 extern crate slog_json;
+#[macro_use]
 extern crate slog_scope;
 
 pub mod errors;
@@ -52,9 +53,12 @@ fn main() {
 
     let root_logger =  slog::Logger::root(root_drain, o!("version" => env!("CARGO_PKG_VERSION")));
 
-    info!(root_logger, "Application started"; "started_at" => format!("{}", time::now().rfc3339()));
+    let _guard = slog_scope::set_global_logger(root_logger);
+
+    info!("Application started"; "started_at" => format!("{}", time::now().rfc3339()));
 
     if let Err(ref e) = run() {
+        error!("error returned to main"; "error-chain" => e.to_string());
         println!("Error: {}", e);
 
         for e in e.iter().skip(1) {
