@@ -93,7 +93,10 @@ impl Screen for PortSelect {
         let mut y = 0;
 
         for port in self.ports.iter() {
-            draw_text(&mut engine.renderer, &engine.font, &port.port_name, [offset_x, y]);
+            draw_text(&mut engine.renderer,
+                      &engine.font,
+                      &port.port_name,
+                      [offset_x, y]);
             y += height;
         }
 

@@ -39,14 +39,11 @@ impl Control for MasterPower {
 
     fn write_commands(&self, output: &mut Vec<RovCommand>) {
         if self.should_send {
-            output.push(
-                if self.master_power {
-                    MasterOn
-                } else {
-                    MasterOff
-                }
-                );
+            output.push(if self.master_power {
+                MasterOn
+            } else {
+                MasterOff
+            });
         }
     }
 }
-

@@ -5,7 +5,7 @@ use screen::{Engine, Screen, Trans};
 use time::{PreciseTime, Duration};
 use sdl2::pixels::Color;
 use util::{draw_text, draw_text_ext};
-use ::control::Control;
+use control::Control;
 
 pub struct RovControl {
     controls: Vec<Box<Control>>,
@@ -19,55 +19,56 @@ impl RovControl {
     pub fn new(rov: Rov) -> RovControl {
         use gilrs;
         RovControl {
-            controls: vec![
-            Box::new(::control::motor::MotorBuilder::new()
-                    .id(0)
-                    .position([-1.0,1.0,0.0])
-                    .direction([-1.0,0.0,0.0])
-                    .build()),
-            Box::new(::control::motor::MotorBuilder::new()
-                    .id(1)
-                    .position([-1.0,-1.0,0.0])
-                    .direction([-1.0,0.0,0.0])
-                    .build()),
-            Box::new(::control::motor::MotorBuilder::new()
-                    .id(2)
-                    .position([0.0,-1.0,1.0])
-                    .direction([0.0,0.0,-1.0])
-                    .build()),
-            Box::new(::control::motor::MotorBuilder::new()
-                    .id(3)
-                    .position([0.0,1.0,1.0])
-                    .direction([0.0,0.0,-1.0])
-                    .build()),
-            Box::new(::control::lights::Lights::new(gilrs::Button::North)),
-            Box::new(::control::master::MasterPower::new(gilrs::Button::Start)),
-            Box::new(::control::servo::Servo::new(0, gilrs::Button::DPadDown, gilrs::Button::DPadUp)),
-            Box::new(::control::servo::Servo::new(1, gilrs::Button::DPadRight, gilrs::Button::DPadLeft)),
-            ],
+            controls: vec![Box::new(::control::motor::MotorBuilder::new()
+                               .id(0)
+                               .position([-1.0, 1.0, 0.0])
+                               .direction([-1.0, 0.0, 0.0])
+                               .build()),
+                           Box::new(::control::motor::MotorBuilder::new()
+                               .id(1)
+                               .position([-1.0, -1.0, 0.0])
+                               .direction([-1.0, 0.0, 0.0])
+                               .build()),
+                           Box::new(::control::motor::MotorBuilder::new()
+                               .id(2)
+                               .position([0.0, -1.0, 1.0])
+                               .direction([0.0, 0.0, -1.0])
+                               .build()),
+                           Box::new(::control::motor::MotorBuilder::new()
+                               .id(3)
+                               .position([0.0, 1.0, 1.0])
+                               .direction([0.0, 0.0, -1.0])
+                               .build()),
+                           Box::new(::control::lights::Lights::new(gilrs::Button::North)),
+                           Box::new(::control::master::MasterPower::new(gilrs::Button::Start)),
+                           Box::new(::control::servo::Servo::new(0,
+                                                                 gilrs::Button::DPadDown,
+                                                                 gilrs::Button::DPadUp)),
+                           Box::new(::control::servo::Servo::new(1,
+                                                                 gilrs::Button::DPadRight,
+                                                                 gilrs::Button::DPadLeft))],
             last_write_time: PreciseTime::now(),
             rov: rov,
             mock_rov: MockRov::new(),
-            renderables: vec![
-                Box::new(MotorRenderable::new(0, [ 30.0,  50.0], [230.0,  50.0])),
-                Box::new(MotorRenderable::new(1, [ 30.0, 100.0], [230.0, 100.0])),
-                Box::new(MotorRenderable::new(2, [ 75.0, 200.0], [ 75.0, 400.0])),
-                Box::new(MotorRenderable::new(3, [185.0, 200.0], [185.0, 400.0])),
-                Box::new(ServoRenderable::new(0, [370.0,  20.0], [370.0, 130.0])),
-                Box::new(ServoRenderable::new(0, [240.0,  20.0], [240.0, 130.0])),
-                Box::new(ServoRenderable::new(1, [250.0, 140.0], [360.0, 140.0])),
-                Box::new(ServoRenderable::new(1, [250.0,  10.0], [360.0,  10.0])),
-                Box::new(DualServoRenderable::new([1, 0], [250.0,  20.0], [360.0, 130.0])),
-                Box::new(CompassRenderable::new([400, 240])),
-            ],
+            renderables: vec![Box::new(MotorRenderable::new(0, [30.0, 50.0], [230.0, 50.0])),
+                              Box::new(MotorRenderable::new(1, [30.0, 100.0], [230.0, 100.0])),
+                              Box::new(MotorRenderable::new(2, [75.0, 200.0], [75.0, 400.0])),
+                              Box::new(MotorRenderable::new(3, [185.0, 200.0], [185.0, 400.0])),
+                              Box::new(ServoRenderable::new(0, [370.0, 20.0], [370.0, 130.0])),
+                              Box::new(ServoRenderable::new(0, [240.0, 20.0], [240.0, 130.0])),
+                              Box::new(ServoRenderable::new(1, [250.0, 140.0], [360.0, 140.0])),
+                              Box::new(ServoRenderable::new(1, [250.0, 10.0], [360.0, 10.0])),
+                              Box::new(DualServoRenderable::new([1, 0],
+                                                                [250.0, 20.0],
+                                                                [360.0, 130.0])),
+                              Box::new(CompassRenderable::new([400, 240]))],
         }
     }
 }
 
 impl Screen for RovControl {
     fn update(&mut self, engine: &mut Engine, delta: f64) -> Trans {
-        for (_, _controller_event) in engine.controllers.poll_events() {
-        }
+        for (_, _controller_event) in engine.controllers.poll_events() {}
 
         for event in engine.event_pump.poll_iter() {
             use sdl2::event::Event;
@@ -104,19 +105,19 @@ impl Screen for RovControl {
         for r in responses {
             use rov::RovResponse::*;
             let letter = match r {
-                Motor {..} => 'm',
+                Motor { .. } => 'm',
                 LightsOn => 'L',
                 LightsOff => 'l',
                 MasterOn => 'O',
                 MasterOff => 'o',
-                CompassOrientation {..} => 'C',
+                CompassOrientation { .. } => 'C',
                 CompassDisabled => 'c',
-                Servo {..} => 'S',
+                Servo { .. } => 'S',
             };
             print!("{}", letter);
         }
         print!("      ");
-        use std::io::{stdout,Write};
+        use std::io::{stdout, Write};
         let _ = stdout().flush();
 
         engine.renderer.set_draw_color(Color::RGB(255, 128, 128));
@@ -205,7 +206,7 @@ struct ServoRenderable {
 
 impl ServoRenderable {
     pub fn new(id: u8, min_pos: [f32; 2], max_pos: [f32; 2]) -> Self {
-        ServoRenderable{
+        ServoRenderable {
             id: id,
             max_pos: max_pos,
             min_pos: min_pos,
@@ -248,7 +249,7 @@ struct DualServoRenderable {
 
 impl DualServoRenderable {
     pub fn new(ids: [u8; 2], min_pos: [f32; 2], max_pos: [f32; 2]) -> Self {
-        DualServoRenderable{
+        DualServoRenderable {
             ids: ids,
             max_pos: max_pos,
             min_pos: min_pos,
@@ -280,9 +281,7 @@ struct CompassRenderable {
 
 impl CompassRenderable {
     pub fn new(top_left: [i32; 2]) -> Self {
-        CompassRenderable{
-            top_left: top_left,
-        }
+        CompassRenderable { top_left: top_left }
     }
 }
 
@@ -291,31 +290,30 @@ impl Renderable for CompassRenderable {
         let rect = (self.top_left[0], self.top_left[1], 200, 200).into();
         engine.renderer.draw_rect(rect).unwrap();
 
-        let text_rect = (self.top_left[0]+10, self.top_left[1]+10, 180, 20).into();
+        let text_rect = (self.top_left[0] + 10, self.top_left[1] + 10, 180, 20).into();
         draw_text_ext(&mut engine.renderer, &engine.font, "Compass", text_rect);
 
         if mock.compass_enabled {
-            let text_rect = (self.top_left[0]+10, self.top_left[1]+30, 25, 20).into();
+            let text_rect = (self.top_left[0] + 10, self.top_left[1] + 30, 25, 20).into();
             draw_text_ext(&mut engine.renderer, &engine.font, "X:", text_rect);
             let x_string = format!("{}", mock.compass_orientation[0]);
-            let text_rect = (self.top_left[0]+35, self.top_left[1]+30, 155, 20).into();
+            let text_rect = (self.top_left[0] + 35, self.top_left[1] + 30, 155, 20).into();
             draw_text_ext(&mut engine.renderer, &engine.font, &x_string, text_rect);
 
-            let text_rect = (self.top_left[0]+10, self.top_left[1]+50, 25, 20).into();
+            let text_rect = (self.top_left[0] + 10, self.top_left[1] + 50, 25, 20).into();
             draw_text_ext(&mut engine.renderer, &engine.font, "Y:", text_rect);
             let x_string = format!("{}", mock.compass_orientation[1]);
-            let text_rect = (self.top_left[0]+35, self.top_left[1]+50, 155, 20).into();
+            let text_rect = (self.top_left[0] + 35, self.top_left[1] + 50, 155, 20).into();
             draw_text_ext(&mut engine.renderer, &engine.font, &x_string, text_rect);
 
-            let text_rect = (self.top_left[0]+10, self.top_left[1]+80, 25, 20).into();
+            let text_rect = (self.top_left[0] + 10, self.top_left[1] + 80, 25, 20).into();
             draw_text_ext(&mut engine.renderer, &engine.font, "Z:", text_rect);
             let x_string = format!("{}", mock.compass_orientation[0]);
-            let text_rect = (self.top_left[0]+35, self.top_left[1]+80, 155, 20).into();
+            let text_rect = (self.top_left[0] + 35, self.top_left[1] + 80, 155, 20).into();
             draw_text_ext(&mut engine.renderer, &engine.font, &x_string, text_rect);
         } else {
-            let text_rect = (self.top_left[0]+10, self.top_left[1]+50, 180, 20).into();
+            let text_rect = (self.top_left[0] + 10, self.top_left[1] + 50, 180, 20).into();
             draw_text_ext(&mut engine.renderer, &engine.font, "Not Found", text_rect);
         }
     }
 }
-

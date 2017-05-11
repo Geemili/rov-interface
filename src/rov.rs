@@ -1,5 +1,5 @@
 
-use errors::*;
+use ::errors::*;
 use std::io::Read;
 use std::thread;
 use std::time::Duration;
@@ -36,7 +36,12 @@ impl RovCommand {
             RovCommand::LightsOff => vec![COMMAND_LIGHTS_OFF],
             RovCommand::MasterOn => vec![COMMAND_MASTER_ON],
             RovCommand::MasterOff => vec![COMMAND_MASTER_OFF],
-            RovCommand::ControlServo { id, microseconds } => vec![COMMAND_CONTROL_SERVO, id, ((microseconds >> 8) & 0xFF) as u8, (microseconds & 0xFF) as u8,],
+            RovCommand::ControlServo { id, microseconds } => {
+                vec![COMMAND_CONTROL_SERVO,
+                     id,
+                     ((microseconds >> 8) & 0xFF) as u8,
+                     (microseconds & 0xFF) as u8]
+            }
         }
     }
 }
@@ -75,7 +80,7 @@ impl RovResponse {
         match command_byte {
             RESPONSE_MOTOR => Some(3),
             RESPONSE_COMPASS_ORIENTATION => Some(6),
-            RESPONSE_COMPASS_DISABLED  => Some(0),
+            RESPONSE_COMPASS_DISABLED => Some(0),
             RESPONSE_LIGHTS_ON => Some(0),
             RESPONSE_LIGHTS_OFF => Some(0),
             RESPONSE_MASTER_ON => Some(0),
@@ -98,30 +103,36 @@ impl RovResponse {
 
         let i16_from_bytes = |left: u8, right: u8| ((left as i16) << 8) | (right as i16);
         let command = match buffer[0] {
-            RESPONSE_MOTOR => RovResponse::Motor {
-                id: buffer[1],
-                throttle: i16_from_bytes(buffer[2], buffer[3]),
-            },
+            RESPONSE_MOTOR => {
+                RovResponse::Motor {
+                    id: buffer[1],
+                    throttle: i16_from_bytes(buffer[2], buffer[3]),
+                }
+            }
 
-            RESPONSE_COMPASS_ORIENTATION => RovResponse::CompassOrientation {
-                x: ((buffer[1] as i16) << 8) | (buffer[2] as i16),
-                y: ((buffer[3] as i16) << 8) | (buffer[4] as i16),
-                z: ((buffer[5] as i16) << 8) | (buffer[6] as i16),
-            },
+            RESPONSE_COMPASS_ORIENTATION => {
+                RovResponse::CompassOrientation {
+                    x: ((buffer[1] as i16) << 8) | (buffer[2] as i16),
+                    y: ((buffer[3] as i16) << 8) | (buffer[4] as i16),
+                    z: ((buffer[5] as i16) << 8) | (buffer[6] as i16),
+                }
+            }
 
             RESPONSE_COMPASS_DISABLED => RovResponse::CompassDisabled,
             RESPONSE_LIGHTS_ON => RovResponse::LightsOn,
             RESPONSE_LIGHTS_OFF => RovResponse::LightsOff,
             RESPONSE_MASTER_ON => RovResponse::MasterOn,
             RESPONSE_MASTER_OFF => RovResponse::MasterOff,
-            RESPONSE_SERVO => RovResponse::Servo {
-                id: buffer[1],
-                microseconds: ((buffer[2] as i16) << 8) | (buffer[3] as i16),
-            },
+            RESPONSE_SERVO => {
+                RovResponse::Servo {
+                    id: buffer[1],
+                    microseconds: ((buffer[2] as i16) << 8) | (buffer[3] as i16),
+                }
+            }
 
             _ => return ParseStatus::Invalid,
         };
-        ParseStatus::Ok(command, (length+1))
+        ParseStatus::Ok(command, (length + 1))
     }
 }
 
@@ -137,7 +148,25 @@ impl Rov {
     pub fn new(port_path: PathBuf) -> Rov {
         let (command_sender, command_receiver) = mpsc::channel();
         let (response_sender, response_receiver) = mpsc::channel();
-        thread::spawn(|| Rov::start_device_thread(port_path, command_receiver, response_sender));
+        thread::spawn(|| {
+            if let Err(ref e) = Rov::start_device_thread(port_path,
+                                                         command_receiver,
+                                                         response_sender) {
+                println!("Error: {}", e);
+
+                for e in e.iter().skip(1) {
+                    println!("Caused by: {}", e);
+                }
+
+                // If there is a backtrace, print it.
+                if let Some(backtrace) = e.backtrace() {
+                    println!("backtrace: {:?}", backtrace);
+                }
+
+                ::std::process::exit(1);
+            }
+
+        });
         Rov {
             command_sender: command_sender,
             response_receiver: response_receiver,
@@ -156,18 +185,19 @@ impl Rov {
 
     fn start_device_thread(port_path: PathBuf,
                            command_receiver: Receiver<Option<RovCommand>>,
-                           response_sender: Sender<RovResponse>) {
+                           response_sender: Sender<RovResponse>)
+                           -> Result<()> {
         // Open port
-        let mut port = serialport::open(&port_path).expect("Couldn't open port");
+        let mut port = serialport::open(&port_path).chain_err(|| "Couldn't open port")?;
 
         let mut settings = serialport::SerialPortSettings::default();
         settings.data_bits = serialport::DataBits::Eight;
         settings.parity = serialport::Parity::None;
         settings.stop_bits = serialport::StopBits::One;
         settings.baud_rate = serialport::BaudRate::Baud115200;
-        port.set_all(&settings).expect("Error configuring port");
+        port.set_all(&settings).chain_err(|| "Error configuring port")?;
 
-        port.set_timeout(Duration::from_millis(5)).expect("Error setting timeout");
+        port.set_timeout(Duration::from_millis(5)).chain_err(|| "Error setting timeout")?;
 
         // Wait for a few milliseconds
         thread::sleep(Duration::from_millis(1000));
@@ -180,7 +210,7 @@ impl Rov {
             for command_option in command_receiver.try_iter() {
                 if let Some(command) = command_option {
                     Rov::write_message(&mut port, &command.to_byte_slice())
-                        .expect("Could not write message.");
+                        .chain_err(|| "Could not write message.")?;
                 } else {
                     break 'device;
                 }
@@ -194,7 +224,8 @@ impl Rov {
                     response_buffer.push_back(buffer[0]);
                     match RovResponse::parse(&response_buffer) {
                         ParseStatus::Ok(response, bytes_read) => {
-                            response_sender.send(response).expect("Could send response to receiver");
+                            let result = response_sender.send(response);
+                            result.chain_err(|| "Couldn't send response to receiver")?;
                             for _ in 0..bytes_read {
                                 response_buffer.pop_front();
                             }
@@ -206,15 +237,19 @@ impl Rov {
                 Err(ref e) if e.kind() == io::ErrorKind::TimedOut => {
                     // Do nothing
                 }
-                Err(e) => panic!("Couldn't read from port: {:?}", e),
+                Err(e) => {
+                    return Err(Error::with_chain(e,
+                                                 ErrorKind::Msg("Couldn't read from port".into())))
+                }
             }
 
         }
+
+        Ok(())
     }
 
 
-    fn write_message(port: &mut Box<SerialPort>, message: &[u8]) -> Result<()>
-    {
+    fn write_message(port: &mut Box<SerialPort>, message: &[u8]) -> Result<()> {
         let parity = message.iter().skip(1).fold(message[0], |acc, i| acc ^ i);
         port.write(message).chain_err(|| "Couldn't write message")?;
         port.write(&[parity]).chain_err(|| "Couldn't write parity")?;

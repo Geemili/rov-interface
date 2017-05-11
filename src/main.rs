@@ -12,31 +12,62 @@ extern crate time;
 extern crate serialport;
 extern crate gilrs;
 
-mod errors;
+pub mod errors;
 mod rov;
 mod mock;
 mod util;
 mod screen;
 mod control;
 
+use errors::*;
+
+fn main() {
+    if let Err(ref e) = run() {
+        println!("Error: {}", e);
+
+        for e in e.iter().skip(1) {
+            println!("Caused by: {}", e);
+        }
+
+        // If there is a backtrace, print it.
+        if let Some(backtrace) = e.backtrace() {
+            println!("backtrace: {:?}", backtrace);
+        }
+
+        ::std::process::exit(1);
+    }
+}
+
 use std::path::Path;
 use std::env;
 
-fn main() {
+fn run() -> Result<()> {
     let serialport_path = env::args().skip(1).next();
-    let sdl_context = sdl2::init().unwrap();
+    let sdl_context = sdl2::init().map_err(|msg| Error::from_kind(ErrorKind::SdlMsg(msg)))
+        .chain_err(|| "Failed to initialize SDL context")?;
     let gilrs = gilrs::Gilrs::new();
-    let video = sdl_context.video().unwrap();
-    let event_pump = sdl_context.event_pump().unwrap();
-    let ttf_context = sdl2_ttf::init().unwrap();
+    let video = sdl_context.video()
+        .map_err(|msg| Error::from_kind(ErrorKind::SdlMsg(msg)))
+        .chain_err(|| "Failed to get video context")?;
+    let event_pump = sdl_context.event_pump()
+        .map_err(|msg| Error::from_kind(ErrorKind::SdlMsg(msg)))
+        .chain_err(|| "Failed to get event pump")?;
+    let ttf_context =
+        sdl2_ttf::init().map_err(|err| Error::from_kind(ErrorKind::SdlMsg(format!("{:?}", err))))
+            .chain_err(|| "Failed to get font context")?;
 
-    let window =
-        video.window("ROV Interface", 800, 600).position_centered().opengl().build().unwrap();
+    let window = video.window("ROV Interface", 800, 600)
+        .position_centered()
+        .opengl()
+        .build()
+        .chain_err(|| "Failed to build SDL window")?;
 
     let font = ttf_context.load_font(Path::new("assets/fonts/NotoSans/NotoSans-Regular.ttf"), 64)
-        .unwrap();
+        .map_err(|font_error| Error::from_kind(ErrorKind::SdlMsg(format!("{:?}", font_error))))
+        .chain_err(|| "Failed to load font")?;
 
-    let renderer = window.renderer().accelerated().build().unwrap();
+    let renderer =
+        window.renderer().accelerated().build().chain_err(|| "Failed to accelerate renderer")?;
 
     let mut engine = screen::Engine {
         event_pump: event_pump,
@@ -69,5 +100,6 @@ fn main() {
         };
         screen = current_screen;
     }
-}
 
+    Ok(())
+}

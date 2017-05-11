@@ -50,7 +50,7 @@ impl Control for Servo {
     }
 
     fn write_commands(&self, output: &mut Vec<RovCommand>) {
-        use ::rov::RovCommand::ControlServo;
+        use rov::RovCommand::ControlServo;
         if self.microseconds != self.prev_microseconds {
             output.push(ControlServo {
                 id: self.id,
@@ -59,4 +59,3 @@ impl Control for Servo {
         }
     }
 }
-

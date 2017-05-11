@@ -19,7 +19,7 @@ impl MockRov {
             servos: [1500; 2], // Start it at the middle
             robot_is_on: true,
             light_relay: false,
-            compass_orientation: [0,0,0],
+            compass_orientation: [0, 0, 0],
             compass_enabled: false,
         }
     }
@@ -38,7 +38,7 @@ impl MockRov {
                 }
             }
             RovResponse::CompassOrientation { x, y, z } => self.compass_orientation = [x, y, z],
-            RovResponse::CompassDisabled  => self.compass_enabled = false,
+            RovResponse::CompassDisabled => self.compass_enabled = false,
             RovResponse::LightsOn => self.light_relay = true,
             RovResponse::LightsOff => self.light_relay = false,
             RovResponse::MasterOn => self.robot_is_on = true,
@@ -50,5 +50,4 @@ impl MockRov {
             }
         }
     }
-
 }

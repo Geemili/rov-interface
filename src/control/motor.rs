@@ -36,14 +36,14 @@ impl MotorBuilder {
 
     pub fn build(self) -> Motor {
         let direction = self.direction.unwrap_or([1.0, 0.0, 0.0]);
-        let angle = (direction[1]/direction[0]).tan();
+        let angle = (direction[1] / direction[0]).tan();
         let rotation_coefficient = match (self.position, angle.is_nan()) {
-            (_,true) => 0.0,
-            (Some(pos), _) if pos == [0.0;3] => 0.0,
+            (_, true) => 0.0,
+            (Some(pos), _) if pos == [0.0; 3] => 0.0,
             (Some(pos), _) => {
-                let angle_from_origin = (pos[1]/pos[0]).tan();
+                let angle_from_origin = (pos[1] / pos[0]).tan();
                 use std::f32::consts;
-                ((angle-angle_from_origin)/consts::PI).sin()
+                ((angle - angle_from_origin) / consts::PI).sin()
             }
             _ => 0.0,
         };
@@ -84,7 +84,7 @@ impl Control for Motor {
     }
 
     fn write_commands(&self, output: &mut Vec<RovCommand>) {
-        use ::rov::RovCommand::ControlMotor;
+        use rov::RovCommand::ControlMotor;
         if self.thrust != self.prev_thrust {
             output.push(ControlMotor {
                 id: self.id,
@@ -93,4 +93,3 @@ impl Control for Motor {
         }
     }
 }
-

@@ -34,13 +34,10 @@ impl Control for Lights {
     }
 
     fn write_commands(&self, output: &mut Vec<RovCommand>) {
-        output.push(
-            if self.lights_state {
-                LightsOn
-            } else {
-                LightsOff
-            }
-            );
+        output.push(if self.lights_state {
+            LightsOn
+        } else {
+            LightsOff
+        });
     }
 }
-
