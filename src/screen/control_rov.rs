@@ -86,7 +86,7 @@ impl Screen for RovControl {
                 let gamepad_state = gamepad.state();
                 let mut commands = vec![];
                 for control in self.controls.iter_mut() {
-                    control.update(&gamepad_state, 1.0);
+                    control.update(&gamepad_state, delta);
                     control.write_commands(&mut commands);
                 }
 

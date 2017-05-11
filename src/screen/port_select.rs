@@ -37,7 +37,7 @@ impl PortSelect {
 }
 
 impl Screen for PortSelect {
-    fn update(&mut self, engine: &mut Engine, delta: f64) -> Trans {
+    fn update(&mut self, engine: &mut Engine, _delta: f64) -> Trans {
         for (_id, event) in engine.controllers.poll_events() {
             use gilrs::Event::ButtonReleased as Press;
             use gilrs::Button::{DPadUp, DPadDown, South};
