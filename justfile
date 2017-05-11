@@ -13,18 +13,20 @@ binaries = '
     assets/
 '
 
-build:
+build-app:
     cargo build
+
+build-driver:
     pio run --project-dir {{pio-dir}} --environment promini
 
 build-release:
     LIBRARY_PATH=lib/ cargo build --release --target={{target}}
     pio run --project-dir {{pio-dir}}
 
-run: build
+run: build-app
     cargo run
 
-upload: build
+upload: build-driver
     pio run --project-dir {{pio-dir}} --target upload --environment promini
 
 publish: build-release
