@@ -2,3 +2,4 @@ target
 *.dll
 LICENSE.freetype.txt
 LICENSE.zlib.txt
+lib/

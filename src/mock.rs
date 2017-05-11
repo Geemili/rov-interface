@@ -1,85 +1,54 @@
 
 /// A mock ROV that reflects the state of the ROV.
 
-use rov::RovCommand;
-use time::{self, Tm, Duration};
+use rov::RovResponse;
 
 pub struct MockRov {
     pub motors: [i16; 6],
+    pub servos: [i16; 2],
     pub robot_is_on: bool,
     pub light_relay: bool,
-    pub sampler_relay: bool,
-    pub turn_off_motor: Option<Tm>,
+    pub compass_orientation: [i16; 3],
+    pub compass_enabled: bool,
 }
 
 impl MockRov {
     pub fn new() -> MockRov {
         MockRov {
             motors: [0; 6],
+            servos: [1500; 2], // Start it at the middle
             robot_is_on: true,
             light_relay: false,
-            sampler_relay: false,
-            turn_off_motor: None,
+            compass_orientation: [0,0,0],
+            compass_enabled: false,
         }
     }
 
-    pub fn apply_commands(&mut self, commands: &Vec<RovCommand>) {
+    pub fn apply_responses(&mut self, commands: &Vec<RovResponse>) {
         for command in commands.iter() {
-            self.apply_command(command);
+            self.apply_response(command);
         }
     }
 
-    pub fn apply_command(&mut self, command: &RovCommand) {
+    pub fn apply_response(&mut self, command: &RovResponse) {
         match *command {
-            RovCommand::MasterOn => {
-                self.master_on();
-                return;
-            }
-            _ => {}
-        }
-        if !self.robot_is_on {
-            return;
-        }
-        match *command {
-            RovCommand::ControlMotor { id, throttle } => {
+            RovResponse::Motor { id, throttle } => {
                 if (id as usize) < self.motors.len() {
                     self.motors[id as usize] = throttle;
                 }
             }
-            RovCommand::CollectSamples { amount } => {
-                self.sampler_relay = true;
-                self.turn_off_motor = Some(time::now() +
-                                           Duration::milliseconds(500 * amount as i64));
-            }
-            RovCommand::LightsOn => self.light_relay = true,
-            RovCommand::LightsOff => self.light_relay = false,
-            RovCommand::MasterOn => {
-                unreachable!();
-            }
-            RovCommand::MasterOff => {
-                self.robot_is_on = false;
-                self.light_relay = false;
-                for motor in self.motors.iter_mut() {
-                    *motor = 0;
+            RovResponse::CompassOrientation { x, y, z } => self.compass_orientation = [x, y, z],
+            RovResponse::CompassDisabled  => self.compass_enabled = false,
+            RovResponse::LightsOn => self.light_relay = true,
+            RovResponse::LightsOff => self.light_relay = false,
+            RovResponse::MasterOn => self.robot_is_on = true,
+            RovResponse::MasterOff => self.robot_is_on = false,
+            RovResponse::Servo { id, microseconds } => {
+                if (id as usize) < self.servos.len() {
+                    self.servos[id as usize] = microseconds;
                 }
             }
         }
     }
 
-    pub fn update(&mut self) {
-        if let Some(turn_off_time) = self.turn_off_motor {
-            if time::now() >= turn_off_time {
-                self.sampler_relay = false;
-                self.turn_off_motor = None;
-            }
-        }
-    }
-
-    fn master_on(&mut self) {
-        self.robot_is_on = true;
-        self.light_relay = false;
-        for motor in self.motors.iter_mut() {
-            *motor = 0;
-        }
-    }
 }
