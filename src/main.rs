@@ -47,7 +47,7 @@ fn main() {
         .write(true)
         .append(true)
         .open("log.json")
-        .unwrap();
+        .expect("Couldn't open log file!");
 
     let json_drain = ::std::sync::Mutex::new(slog_json::Json::default(log_file).fuse());
 
