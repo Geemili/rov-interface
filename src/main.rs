@@ -15,6 +15,12 @@ extern crate gilrs;
 extern crate serde_derive;
 extern crate serde;
 extern crate toml;
+#[macro_use]
+extern crate slog;
+extern crate slog_term;
+extern crate slog_async;
+extern crate slog_json;
+extern crate slog_scope;
 
 pub mod errors;
 mod rov;
@@ -27,6 +33,27 @@ mod config;
 use errors::*;
 
 fn main() {
+    use slog::Drain;
+
+    let decorator = slog_term::TermDecorator::new().build();
+    let term_drain = slog_term::FullFormat::new(decorator).build().fuse();
+    let term_drain = slog_async::Async::new(term_drain).build().fuse();
+
+    let log_file = ::std::fs::OpenOptions::new()
+        .create(true)
+        .write(true)
+        .append(true)
+        .open("log.json")
+        .unwrap();
+
+    let json_drain = ::std::sync::Mutex::new(slog_json::Json::default(log_file).fuse());
+
+    let root_drain = slog::Duplicate(json_drain, term_drain).fuse();
+
+    let root_logger =  slog::Logger::root(root_drain, o!("version" => env!("CARGO_PKG_VERSION")));
+
+    info!(root_logger, "Application started"; "started_at" => format!("{}", time::now().rfc3339()));
+
     if let Err(ref e) = run() {
         println!("Error: {}", e);
 

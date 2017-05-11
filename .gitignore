@@ -4,3 +4,4 @@ LICENSE.freetype.txt
 LICENSE.zlib.txt
 lib/
 *.rs.bk
+log.json
