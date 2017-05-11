@@ -108,7 +108,10 @@ fn run() -> Result<()> {
         let current_screen = match screen.update(&mut engine, delta) {
             screen::Trans::Quit => break,
             screen::Trans::None => screen,
-            screen::Trans::Switch(new_screen) => new_screen,
+            screen::Trans::Switch(mut new_screen) => {
+                new_screen.init(&mut engine).chain_err(|| "Failed to initialize screen")?;
+                new_screen
+            }
         };
         screen = current_screen;
     }

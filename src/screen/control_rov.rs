@@ -6,6 +6,7 @@ use time::{PreciseTime, Duration};
 use sdl2::pixels::Color;
 use util::{draw_text, draw_text_ext};
 use control::Control;
+use ::errors::*;
 
 pub struct RovControl {
     controls: Vec<Box<Control>>,
@@ -17,36 +18,8 @@ pub struct RovControl {
 
 impl RovControl {
     pub fn new(rov: Rov) -> RovControl {
-        use gilrs;
         RovControl {
-            controls: vec![Box::new(::control::motor::MotorBuilder::new()
-                               .id(0)
-                               .position([-1.0, 1.0, 0.0])
-                               .direction([-1.0, 0.0, 0.0])
-                               .build()),
-                           Box::new(::control::motor::MotorBuilder::new()
-                               .id(1)
-                               .position([-1.0, -1.0, 0.0])
-                               .direction([-1.0, 0.0, 0.0])
-                               .build()),
-                           Box::new(::control::motor::MotorBuilder::new()
-                               .id(2)
-                               .position([0.0, -1.0, 1.0])
-                               .direction([0.0, 0.0, -1.0])
-                               .build()),
-                           Box::new(::control::motor::MotorBuilder::new()
-                               .id(3)
-                               .position([0.0, 1.0, 1.0])
-                               .direction([0.0, 0.0, -1.0])
-                               .build()),
-                           Box::new(::control::lights::Lights::new(gilrs::Button::North)),
-                           Box::new(::control::master::MasterPower::new(gilrs::Button::Start)),
-                           Box::new(::control::servo::Servo::new(0,
-                                                                 gilrs::Button::DPadDown,
-                                                                 gilrs::Button::DPadUp)),
-                           Box::new(::control::servo::Servo::new(1,
-                                                                 gilrs::Button::DPadRight,
-                                                                 gilrs::Button::DPadLeft))],
+            controls: vec![],
             last_write_time: PreciseTime::now(),
             rov: rov,
             mock_rov: MockRov::new(),
@@ -67,6 +40,43 @@ impl RovControl {
 }
 
 impl Screen for RovControl {
+    fn init(&mut self, engine: &mut Engine) -> Result<()> {
+        use gilrs;
+        self.controls.clear();
+        self.controls.push(Box::new(::control::motor::MotorBuilder::new()
+            .id(0)
+            .position([-1.0, 1.0, 0.0])
+            .direction([-1.0, 0.0, 0.0])
+            .build()));
+        self.controls.push(Box::new(::control::motor::MotorBuilder::new()
+            .id(1)
+            .position([-1.0, -1.0, 0.0])
+            .direction([-1.0, 0.0, 0.0])
+            .build()));
+        self.controls.push(Box::new(::control::motor::MotorBuilder::new()
+            .id(2)
+            .position([0.0, -1.0, 1.0])
+            .direction([0.0, 0.0, -1.0])
+            .build()));
+        self.controls.push(Box::new(::control::motor::MotorBuilder::new()
+            .id(3)
+            .position([0.0, 1.0, 1.0])
+            .direction([0.0, 0.0, -1.0])
+            .build()));
+        self.controls.push(Box::new(::control::lights::Lights::new(gilrs::Button::North)));
+        self.controls.push(Box::new(::control::master::MasterPower::new(gilrs::Button::Start)));
+
+        self.controls.push(Box::new(::control::servo::Servo::new(0,
+                                                                 gilrs::Button::DPadDown,
+                                                                 gilrs::Button::DPadUp,
+                                                                 engine.config.control.servo_tilt.speed)));
+        self.controls.push(Box::new(::control::servo::Servo::new(1,
+                                                                 gilrs::Button::DPadRight,
+                                                                 gilrs::Button::DPadLeft,
+                                                                 engine.config.control.servo_pan.speed)));
+        Ok(())
+    }
+
     fn update(&mut self, engine: &mut Engine, delta: f64) -> Trans {
         for (_, _controller_event) in engine.controllers.poll_events() {}
 

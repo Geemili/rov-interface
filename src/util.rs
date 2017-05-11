@@ -24,7 +24,7 @@ pub fn draw_text_ext(renderer: &mut Renderer, font: &Font, text: &str, dest: Rec
     renderer.copy(&texture, None, Some(dest)).unwrap();
 }
 
-use ::config::Config;
+use config::Config;
 pub fn load_config_from_file(path: &str) -> Result<Config> {
     use std::fs::File;
     use std::io::Read;

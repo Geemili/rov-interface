@@ -7,6 +7,7 @@ use util::draw_text;
 use screen::{Engine, Screen, Trans};
 use screen::control_rov::RovControl;
 use rov::Rov;
+use ::errors::*;
 
 pub struct PortSelect {
     ports: Vec<serialport::SerialPortInfo>,
@@ -37,6 +38,10 @@ impl PortSelect {
 }
 
 impl Screen for PortSelect {
+    fn init(&mut self, _engine: &mut Engine) -> Result<()> {
+        Ok(())
+    }
+
     fn update(&mut self, engine: &mut Engine, _delta: f64) -> Trans {
         for (_id, event) in engine.controllers.poll_events() {
             use gilrs::Event::ButtonReleased as Press;
