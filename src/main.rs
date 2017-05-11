@@ -59,7 +59,7 @@ fn main() {
     let mut prev_time = ::std::time::Instant::now();
     loop {
         let elapsed = prev_time.elapsed();
-        let delta = (elapsed.as_secs() as f64 * 1_000.0) + (elapsed.subsec_nanos() as f64 / 1_000_000.0);
+        let delta = (elapsed.as_secs() as f64) + (elapsed.subsec_nanos() as f64 / 1_000_000_000.0);
         prev_time = ::std::time::Instant::now();
 
         let current_screen = match screen.update(&mut engine, delta) {
