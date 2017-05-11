@@ -6,6 +6,7 @@ use rov::RovCommand;
 pub const SERVO_LOW: i16 = 1000;
 pub const SERVO_MID: i16 = 1500;
 pub const SERVO_HIGH: i16 = 2000;
+pub const MOVE_SPEED_PER_SECOND: f64 = 40.0;
 
 pub struct Servo {
     // info
@@ -30,14 +31,14 @@ impl Servo {
 }
 
 impl Control for Servo {
-    fn update(&mut self, input: &gilrs::GamepadState) {
+    fn update(&mut self, input: &gilrs::GamepadState, delta: f64) {
         self.prev_microseconds = self.microseconds;
         let increase = input.is_pressed(self.increase_button);
         let decrease = input.is_pressed(self.decrease_button);
 
         self.microseconds = match (increase, decrease) {
-            (true, false) => self.microseconds + 40,
-            (false, true) => self.microseconds - 40,
+            (true, false) => self.microseconds + (MOVE_SPEED_PER_SECOND * delta) as i16,
+            (false, true) => self.microseconds - (MOVE_SPEED_PER_SECOND * delta) as i16,
             _ => self.microseconds,
         };
         if self.microseconds < SERVO_LOW {
