@@ -56,8 +56,13 @@ fn main() {
         None => Box::new(screen::port_select::PortSelect::new()),
     };
 
+    let mut prev_time = ::std::time::Instant::now();
     loop {
-        let current_screen = match screen.update(&mut engine) {
+        let elapsed = prev_time.elapsed();
+        let delta = (elapsed.as_secs() as f64 * 1_000.0) + (elapsed.subsec_nanos() as f64 / 1_000_000.0);
+        prev_time = ::std::time::Instant::now();
+
+        let current_screen = match screen.update(&mut engine, delta) {
             screen::Trans::Quit => break,
             screen::Trans::None => screen,
             screen::Trans::Switch(new_screen) => new_screen,

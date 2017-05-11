@@ -65,7 +65,7 @@ impl RovControl {
 }
 
 impl Screen for RovControl {
-    fn update(&mut self, engine: &mut Engine) -> Trans {
+    fn update(&mut self, engine: &mut Engine, delta: f64) -> Trans {
         for (_, _controller_event) in engine.controllers.poll_events() {
         }
 
