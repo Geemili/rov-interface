@@ -1,16 +1,18 @@
 [package]
+authors = ["geemili <minergeemili@gmail.com>"]
 name = "rov-interface"
 version = "0.1.0"
-authors = ["geemili <minergeemili@gmail.com>"]
-
 [dependencies]
-serial = "0.3"
+error-chain = "0.10"
+fomat-macros = "0.1"
+gilrs = "0.4.2"
 sdl2 = "0.25"
 sdl2_ttf = "0.25"
-fomat-macros = "0.1"
-error-chain = "0.10"
-vecmath = "0.2"
-time = "0.1"
+serde = "*"
+serde_derive = "*"
+serial = "0.3"
 serial_enumerate = "0.1.0"
-gilrs = "0.4.2"
 serialport = "1.0.1"
+time = "0.1"
+toml = "*"
+vecmath = "0.2"

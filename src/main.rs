@@ -11,6 +11,10 @@ extern crate vecmath;
 extern crate time;
 extern crate serialport;
 extern crate gilrs;
+#[macro_use]
+extern crate serde_derive;
+extern crate serde;
+extern crate toml;
 
 pub mod errors;
 mod rov;
@@ -18,6 +22,7 @@ mod mock;
 mod util;
 mod screen;
 mod control;
+mod config;
 
 use errors::*;
 
@@ -69,11 +74,18 @@ fn run() -> Result<()> {
     let renderer =
         window.renderer().accelerated().build().chain_err(|| "Failed to accelerate renderer")?;
 
+    let config = match util::load_config_from_file("config.toml") {
+        Ok(config) => config,
+        // TODO: Log error
+        Err(_e) => ::config::Config::default(),
+    };
+
     let mut engine = screen::Engine {
         event_pump: event_pump,
         controllers: gilrs,
         renderer: renderer,
         font: font,
+        config: config,
     };
 
     use screen::Screen;
