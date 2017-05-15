@@ -36,3 +36,15 @@ publish: build-release
     cp driver/src/commands.h driver/src/main.h {{out}}/driver/
     cp driver/src/src.ino {{out}}/driver/driver.ino
 
+download-sdl:
+    # TODO: Download stuff from the SDL website
+
+windows-cross: # TODO: make sure we have the sdl files for compilation
+    cargo build --release --target "x86_64-pc-windows-gnu"
+
+package-windows-zip: windows-cross
+    # TODO:
+    # Copy SDL files to directory
+    # Copy assets into directory
+    # Copy executable into directory
+    # Zip up directory
