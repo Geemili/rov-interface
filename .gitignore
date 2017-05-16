@@ -5,3 +5,4 @@ LICENSE.zlib.txt
 lib/
 *.rs.bk
 log.json
+build/
