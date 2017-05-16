@@ -60,13 +60,7 @@ fn main() {
     info!("Application started"; "started_at" => format!("{}", time::now().rfc3339()));
 
     if let Err(ref e) = run() {
-        let mut error_trace = String::new();
-        error_trace.push_str("Error: ");
-        error_trace.push_str(&e.to_string());
-        for e in e.iter().skip(1) {
-            error_trace.push_str("\nCause: ");
-            error_trace.push_str(&e.to_string());
-        }
+        let error_trace = util::get_error_trace(e);
 
         // If there is a backtrace, print it.
         let backtrace = format!("{:?}", e.backtrace());
@@ -111,8 +105,11 @@ fn run() -> Result<()> {
 
     let config = match util::load_config_from_file("config.toml") {
         Ok(config) => config,
-        // TODO: Log error
-        Err(_e) => ::config::Config::default(),
+        Err(ref e) => {
+            let error_trace = util::get_error_trace(e);
+            info!("Error loading config file, using default configuration."; "error_trace" => error_trace);
+            ::config::Config::default()
+        }
     };
 
     let mut engine = screen::Engine {

@@ -37,3 +37,14 @@ pub fn load_config_from_file(path: &str) -> Result<Config> {
 
     Ok(config)
 }
+
+pub fn get_error_trace(e: &Error) -> String {
+    let mut error_trace = String::new();
+    error_trace.push_str("Error: ");
+    error_trace.push_str(&e.to_string());
+    for e in e.iter().skip(1) {
+        error_trace.push_str("\nCause: ");
+        error_trace.push_str(&e.to_string());
+    }
+    error_trace
+}
