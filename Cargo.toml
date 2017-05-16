@@ -1,7 +1,8 @@
 [package]
 authors = ["geemili <minergeemili@gmail.com>"]
 name = "rov-interface"
-version = "0.1.0"
+version = "0.1.1"
+
 [dependencies]
 error-chain = "0.10"
 fomat-macros = "0.1"
