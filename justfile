@@ -72,7 +72,7 @@ dist-windows VERSION: windows-cross
 
 new-release VERSION:
     git checkout -b release-{{VERSION}} develop
-    cargo bump {{VERSION}}
+    cargo bump --no-git-tag-version {{VERSION}}
     git add Cargo.toml Cargo.lock
     git commit -m "Update version number"
     just dist-windows {{VERSION}}
