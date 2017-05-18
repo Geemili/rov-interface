@@ -3,7 +3,7 @@
 linker = "x86_64-w64-mingw32-gcc"
 ar = "x86_64-w64-mingw32-ar"
 rustflags=[
-  "-L/usr/x86_64-w64-mingw32/lib",
-  "-L./buildTODO/SDL2_ttf"
+  "-L./build/sdl/SDL2-2.0.5/x86_64-w64-mingw32/lib",
+  "-L./build/sdl/SDL2_ttf-2.0.14/x86_64-w64-mingw32/lib"
 ]
 
