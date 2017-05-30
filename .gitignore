@@ -6,3 +6,4 @@ lib/
 *.rs.bk
 log.json
 build/
+config.toml

@@ -72,15 +72,16 @@ dist-windows VERSION: windows-cross
 
 new-release VERSION:
     git checkout -b release-{{VERSION}} develop
-    cargo bump {{VERSION}}
-    git add Cargo.toml
+    cargo bump --no-git-tag-version {{VERSION}}
+    git add Cargo.toml Cargo.lock
     git commit -m "Update version number"
     just dist-windows {{VERSION}}
 
-commit-release VERSION:
+commit-release VERSION MASTER_MESSAGE:
     git checkout master
     git merge --no-ff release-{{VERSION}}
-    git push
+    git tag -a {{VERSION}} -m "MASTER_MESSAGE" master
+    git push --tags
     git checkout develop
     git merge --no-ff release-{{VERSION}}
     git push

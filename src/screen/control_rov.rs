@@ -108,6 +108,7 @@ impl Screen for RovControl {
                 }
 
                 for command in commands.iter() {
+                    trace!("Sending command"; "command" => fomat!([command]));
                     self.rov.send_command(command.clone()).chain_err(|| "Failed to update rov")?;
                 }
 
@@ -117,22 +118,9 @@ impl Screen for RovControl {
 
         let responses = self.rov.responses();
         self.mock_rov.apply_responses(&responses);
-        pint!("\r");
         for r in responses {
-            use rov::RovResponse::*;
-            let letter = match r {
-                Motor { .. } => 'm',
-                LightsOn => 'L',
-                LightsOff => 'l',
-                MasterOn => 'O',
-                MasterOff => 'o',
-                CompassOrientation { .. } => 'C',
-                CompassDisabled => 'c',
-                Servo { .. } => 'S',
-            };
-            print!("{}", letter);
+            trace!("Received response"; "response" => fomat!([r]));
         }
-        print!("      ");
         use std::io::{stdout, Write};
         let _ = stdout().flush();
 
