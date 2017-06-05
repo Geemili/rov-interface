@@ -9,6 +9,7 @@ pub struct Lights {
     // state
     lights_state: bool,
     was_pressed: bool,
+    need_to_write: bool,
 }
 
 impl Lights {
@@ -17,6 +18,7 @@ impl Lights {
             button: button,
             lights_state: false,
             was_pressed: false,
+            need_to_write: true,
         }
     }
 }
@@ -27,17 +29,22 @@ impl Control for Lights {
         match (self.was_pressed, is_pressed) {
             (false, true) => {
                 self.lights_state = !self.lights_state;
+                self.need_to_write = true;
             }
-            _ => {}
+            _ => {
+                self.need_to_write = false;
+            }
         }
         self.was_pressed = is_pressed;
     }
 
     fn write_commands(&self, output: &mut Vec<RovCommand>) {
-        output.push(if self.lights_state {
-            LightsOn
-        } else {
-            LightsOff
-        });
+        if self.need_to_write {
+            output.push(if self.lights_state {
+                LightsOn
+            } else {
+                LightsOff
+            });
+        }
     }
 }
