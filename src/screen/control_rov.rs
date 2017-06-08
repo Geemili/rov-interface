@@ -120,6 +120,16 @@ impl Screen for RovControl {
         self.mock_rov.apply_responses(&responses);
         for r in responses {
             trace!("Received response"; "response" => fomat!([r]));
+            use rov::RovResponse;
+            match r {
+                RovResponse::NoI2c => info!("No I2C devices found"),
+                RovResponse::I2cFound { address, error_code } => {
+                    info!("I2C device found";
+                         "address" => address,
+                         "error_code" => error_code);
+                }
+                _ => {}
+            }
         }
         use std::io::{stdout, Write};
         let _ = stdout().flush();

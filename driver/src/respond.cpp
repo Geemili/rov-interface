@@ -1,4 +1,6 @@
 
+#include <Arduino.h>
+
 #define RESPONSE_MOTOR 0x10
 #define RESPONSE_COMPASS_ORIENTATION 0x20
 #define RESPONSE_COMPASS_DISABLED 0x21
@@ -7,6 +9,8 @@
 #define RESPONSE_MASTER_ON 0x40
 #define RESPONSE_MASTER_OFF 0x43
 #define RESPONSE_SERVO 0x66
+#define RESPONSE_NO_I2C 0x73
+#define RESPONSE_I2C_FOUND 0x77
 
 #define TWO_BYTES_TO_ARRAY(name) ((uint8_t)((name>>8)&0xff)),((uint8_t)((name)&0xff))
 
@@ -58,5 +62,19 @@ void say_servo(uint8_t id, int16_t microseconds) {
         (uint8_t)((microseconds)&0xff)
         };
     Serial.write(buf, 4);
+}
+
+void say_no_i2c() {
+    uint8_t buf[] = {RESPONSE_NO_I2C};
+    Serial.write(buf, 1);
+}
+
+void say_i2c_found(uint8_t id, uint8_t error_code) {
+    uint8_t buf[] = {
+        RESPONSE_I2C_FOUND,
+        id,
+        error_code
+        };
+    Serial.write(buf, 3);
 }
 

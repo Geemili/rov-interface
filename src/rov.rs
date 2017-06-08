@@ -54,6 +54,8 @@ const RESPONSE_LIGHTS_OFF: u8 = 0x30;
 const RESPONSE_MASTER_ON: u8 = 0x40;
 const RESPONSE_MASTER_OFF: u8 = 0x43;
 const RESPONSE_SERVO: u8 = 0x66;
+const RESPONSE_NO_I2C: u8 = 0x73;
+const RESPONSE_I2C_FOUND: u8 = 0x77;
 
 #[derive(Debug)]
 pub enum RovResponse {
@@ -65,6 +67,8 @@ pub enum RovResponse {
     MasterOn,
     MasterOff,
     Servo { id: u8, microseconds: i16 },
+    NoI2c,
+    I2cFound { address: u8, error_code: u8 },
 }
 
 pub enum ParseStatus {
@@ -86,6 +90,8 @@ impl RovResponse {
             RESPONSE_MASTER_ON => Some(0),
             RESPONSE_MASTER_OFF => Some(0),
             RESPONSE_SERVO => Some(3),
+            RESPONSE_NO_I2C => Some(0),
+            RESPONSE_I2C_FOUND => Some(2),
             _ => None,
         }
     }
@@ -129,6 +135,15 @@ impl RovResponse {
                     microseconds: ((buffer[2] as i16) << 8) | (buffer[3] as i16),
                 }
             }
+            
+            RESPONSE_NO_I2C => RovResponse::NoI2c,
+            RESPONSE_I2C_FOUND => {
+                RovResponse::I2cFound {
+                    address: buffer[1],
+                    error_code: buffer[2],
+                }
+            }
+            
 
             _ => return ParseStatus::Invalid,
         };

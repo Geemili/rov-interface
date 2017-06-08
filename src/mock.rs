@@ -2,6 +2,7 @@
 /// A mock ROV that reflects the state of the ROV.
 
 use rov::RovResponse;
+use std::collections::HashSet;
 
 pub struct MockRov {
     pub motors: [i16; 6],
@@ -10,6 +11,7 @@ pub struct MockRov {
     pub light_relay: bool,
     pub compass_orientation: [i16; 3],
     pub compass_enabled: bool,
+    pub i2c_devices: HashSet<u8>,
 }
 
 impl MockRov {
@@ -21,6 +23,7 @@ impl MockRov {
             light_relay: false,
             compass_orientation: [0, 0, 0],
             compass_enabled: false,
+            i2c_devices: HashSet::new(),
         }
     }
 
@@ -47,6 +50,10 @@ impl MockRov {
                 if (id as usize) < self.servos.len() {
                     self.servos[id as usize] = microseconds;
                 }
+            }
+            RovResponse::NoI2c => self.i2c_devices.clear(),
+            RovResponse::I2cFound { address, .. } => {
+                self.i2c_devices.insert(address);
             }
         }
     }

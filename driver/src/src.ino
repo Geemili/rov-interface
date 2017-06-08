@@ -4,6 +4,7 @@
 #include <Adafruit_Sensor.h>
 #include <BNO055.h>
 #include "commands.h"
+#include "respond.h"
 #include "main.h"
 
 #define LIGHTS_RELAY_PIN 13
@@ -204,6 +205,9 @@ void master_on() {
   servos[0].attach(9);
   servos[1].attach(10);
   servos_reset();
+
+  i2c_scan();
+
   // Delay to allow the ESC to recognize the stopped signal
   delay(1000);
 
