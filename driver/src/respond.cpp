@@ -1,5 +1,6 @@
 
 #include <Arduino.h>
+#include "version.h"
 
 #define RESPONSE_MOTOR 0x10
 #define RESPONSE_COMPASS_ORIENTATION 0x20
@@ -11,6 +12,7 @@
 #define RESPONSE_SERVO 0x66
 #define RESPONSE_NO_I2C 0x73
 #define RESPONSE_I2C_FOUND 0x77
+#define RESPONSE_DRIVER_VERSION 0x88
 
 #define TWO_BYTES_TO_ARRAY(name) ((uint8_t)((name>>8)&0xff)),((uint8_t)((name)&0xff))
 
@@ -74,6 +76,14 @@ void say_i2c_found(uint8_t id, uint8_t error_code) {
         RESPONSE_I2C_FOUND,
         id,
         error_code
+        };
+    Serial.write(buf, 3);
+}
+
+void say_version() {
+    uint8_t buf[] = {
+        RESPONSE_DRIVER_VERSION,
+        TWO_BYTES_TO_ARRAY(DRIVER_VERSION)
         };
     Serial.write(buf, 3);
 }

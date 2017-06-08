@@ -164,6 +164,10 @@ void handle_command(Commands command, uint8_t *buffer)
       // TODO: Send back error message when motor_id is greater then 6
       break;
     }
+    case GetVersion: {
+      say_version();
+      break;
+    }
   }
 }
 
