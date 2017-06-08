@@ -14,6 +14,7 @@ pub struct RovControl {
     rov: Rov,
     mock_rov: MockRov,
     renderables: Vec<Box<Renderable>>,
+    prev_gamepad_state: ::gilrs::GamepadState,
 }
 
 impl RovControl {
@@ -35,6 +36,7 @@ impl RovControl {
                                                                 [250.0, 20.0],
                                                                 [360.0, 130.0])),
                               Box::new(CompassRenderable::new([400, 240]))],
+            prev_gamepad_state: ::gilrs::GamepadState::default(),
         }
     }
 }
@@ -101,6 +103,10 @@ impl Screen for RovControl {
         if self.last_write_time.to(now) >= Duration::milliseconds(5) {
             if let Some((_id, gamepad)) = engine.controllers.gamepads().next() {
                 let gamepad_state = gamepad.state();
+                if &self.prev_gamepad_state != gamepad_state {
+                    trace!("Gamepad state"; "gamepad_state" => format!("{:?}", gamepad_state));
+                    self.prev_gamepad_state = gamepad_state.clone();
+                }
                 let mut commands = vec![];
                 for control in self.controls.iter_mut() {
                     control.update(&gamepad_state, delta);
