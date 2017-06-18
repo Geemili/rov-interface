@@ -87,3 +87,7 @@ commit-release VERSION MASTER_MESSAGE:
     git push
     git branch -d release-{{VERSION}}
 
+kak:
+    # Start kakoune daemon
+    kak -d -s rov-interface
+
