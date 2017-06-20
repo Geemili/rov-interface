@@ -67,6 +67,11 @@ dist-windows VERSION: windows-cross
     cp -r {{assets_path}} {{windows_dist_folder}}
     cp {{executable}} {{windows_dist_folder}}
     # TODO: Copy driver code
+    # driver/
+    ## driver/BNO055/      <- I could vendor the library instead
+    #                           Yeah. Let's do that.
+    ## driver/driver/      <- Driver
+    ## README.txt          <- Installation instructions, pins
     # Zip up directory
     cd {{windows_dist_folder}} && zip -FSr "{{windows_dist_zip_prefix}}_{{VERSION}}_{{windows_dist_zip_suffix}}" *
 
