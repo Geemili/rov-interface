@@ -59,19 +59,23 @@ assets_path = "./assets"
 executable = "./target/x86_64-pc-windows-gnu/release/rov-interface.exe"
 windows_dist_zip_prefix = build_folder + "/rov-interface"
 windows_dist_zip_suffix = "windows.zip" 
+driver_path = "./driver"
+driver_source_path = driver_path + "/src"
+driver_pins_path = driver_path + "/pins.md"
+driver_dest = windows_dist_folder + "/driver"
 
 dist-windows VERSION: windows-cross
+    # Package rov-interface for windows
     mkdir -p {{windows_dist_folder}}
     cp {{sdl2_path}}/x86_64-w64-mingw32/bin/* {{windows_dist_folder}}
     cp {{sdl2_ttf_path}}/x86_64-w64-mingw32/bin/* {{windows_dist_folder}}
     cp -r {{assets_path}} {{windows_dist_folder}}
     cp {{executable}} {{windows_dist_folder}}
-    # TODO: Copy driver code
-    # driver/
-    ## driver/BNO055/      <- I could vendor the library instead
-    #                           Yeah. Let's do that.
-    ## driver/driver/      <- Driver
-    ## README.txt          <- Installation instructions, pins
+
+    # Copy driver to directory
+    mkdir -p {{driver_dest}}
+    cp -r {{driver_source_path}}/* {{driver_pins_path}} {{driver_dest}}
+
     # Zip up directory
     cd {{windows_dist_folder}} && zip -FSr "{{windows_dist_zip_prefix}}_{{VERSION}}_{{windows_dist_zip_suffix}}" *
 
