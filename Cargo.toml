@@ -1,7 +1,7 @@
 [package]
 authors = ["geemili <minergeemili@gmail.com>"]
 name = "rov-interface"
-version = "0.1.1"
+version = "0.1.2"
 
 [dependencies]
 error-chain = "0.10"
@@ -14,7 +14,6 @@ serde_derive = "1.0"
 serial = "0.3"
 serial_enumerate = "0.1.0"
 serialport = "1.0.1"
-slog = { version="2", features = ["max_level_trace", "release_max_level_trace"] }
 slog-async = "2"
 slog-json = "2"
 slog-scope = "3"
@@ -22,3 +21,7 @@ slog-term = "2"
 time = "0.1"
 toml = "0.4"
 vecmath = "0.2"
+
+[dependencies.slog]
+features = ["max_level_trace", "release_max_level_trace"]
+version = "2"
