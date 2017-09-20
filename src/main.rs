@@ -17,7 +17,7 @@ extern crate serde;
 extern crate toml;
 #[macro_use(o, kv, slog_b, slog_kv,
            slog_record, slog_record_static,
-           slog_log, slog_info, slog_error, slog_trace)]
+           slog_log, slog_info, slog_error, slog_trace, slog_warn)]
 extern crate slog;
 extern crate slog_term;
 extern crate slog_async;
