@@ -125,7 +125,6 @@ impl Screen for RovControl {
         let responses = self.rov.responses();
         self.mock_rov.apply_responses(&responses);
         for r in responses {
-            trace!("Received response"; "response" => fomat!([r]));
             use rov::RovResponse;
             match r {
                 RovResponse::NoI2c => info!("No I2C devices found"),
