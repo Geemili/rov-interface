@@ -35,6 +35,7 @@ mod control;
 mod config;
 
 use errors::*;
+use rusttype::gpu_cache::Cache;
 
 fn main() {
     use slog::Drain;
@@ -115,12 +116,23 @@ fn run() -> Result<()> {
         }
     };
 
+    let (cache_width, cache_height) = (512, 512);
+    let cache = Cache::new(cache_width, cache_height, 0.1, 0.1);
+
+    use sdl2::pixels::PixelFormatEnum;
+    const PIXEL_FORMAT: PixelFormatEnum = PixelFormatEnum::RGBA8888;
+
+    let cache_texture = renderer.create_texture_target(PIXEL_FORMAT, cache_width, cache_height)
+        .chain_err(|| "Failed to create texture for font cache")?;
+
     let mut engine = screen::Engine {
         event_pump: event_pump,
         controllers: gilrs,
         renderer: renderer,
         font: font,
         rfont: rfont,
+        cache: cache,
+        cache_texture: cache_texture,
         config: config,
     };
 
