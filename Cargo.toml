@@ -21,6 +21,7 @@ slog-term = "2"
 time = "0.1"
 toml = "0.4"
 vecmath = "0.2"
+rusttype = "*"
 
 [dependencies.slog]
 features = ["max_level_trace", "release_max_level_trace"]

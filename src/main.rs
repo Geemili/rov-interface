@@ -24,6 +24,7 @@ extern crate slog_async;
 extern crate slog_json;
 #[macro_use]
 extern crate slog_scope;
+extern crate rusttype;
 
 pub mod errors;
 mod rov;
@@ -100,6 +101,8 @@ fn run() -> Result<()> {
         .map_err(|font_error| Error::from_kind(ErrorKind::SdlMsg(format!("{:?}", font_error))))
         .chain_err(|| "Failed to load font")?;
 
+    let rfont = load_font().chain_err(|| "Failed to load r font")?;
+
     let renderer =
         window.renderer().accelerated().build().chain_err(|| "Failed to accelerate renderer")?;
 
@@ -117,6 +120,7 @@ fn run() -> Result<()> {
         controllers: gilrs,
         renderer: renderer,
         font: font,
+        rfont: rfont,
         config: config,
     };
 
@@ -150,4 +154,18 @@ fn run() -> Result<()> {
     }
 
     Ok(())
+}
+
+use rusttype::{FontCollection, Font};
+use std::fs::File;
+use std::io::Read;
+
+fn load_font<'a>() -> Result<Font<'a>> {
+    let path = Path::new("assets/fonts/NotoSans/NotoSans-Regular.ttf");
+    let mut file = File::open(path).chain_err(|| "Font file not found")?;
+    let mut bytes = vec![];
+    file.read_to_end(&mut bytes).chain_err(|| "Failed to read font file")?;
+    let collection = FontCollection::from_bytes(bytes);
+    collection.into_font()
+        .ok_or("File contained no fonts!".into())
 }

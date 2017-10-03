@@ -17,7 +17,8 @@ pub trait Screen {
 
 use sdl2::EventPump;
 use sdl2::render::Renderer;
-use sdl2_ttf::Font;
+use sdl2_ttf::Font as SdlFont;
+use rusttype::Font;
 use gilrs;
 use config::Config;
 
@@ -25,6 +26,7 @@ pub struct Engine<'renderer> {
     pub event_pump: EventPump,
     pub controllers: gilrs::Gilrs,
     pub renderer: Renderer<'renderer>,
-    pub font: Font<'renderer>,
+    pub font: SdlFont<'renderer>,
+    pub rfont: Font<'renderer>,
     pub config: Config,
 }
