@@ -126,7 +126,7 @@ void handle_command(Commands command, uint8_t *buffer)
       uint8_t motor_id = buffer[0];
       if (motor_id < NUM_MOTORS)
       {
-        int16_t throttle = (buffer[1] << 8) | buffer[0];
+        int16_t throttle = (((int16_t)buffer[1]) << 8) | buffer[2];
         int16_t control_signal = map(throttle, INT16_MIN, INT16_MAX, MIN_CONTROL_SIGNAL, MAX_CONTROL_SIGNAL);
         motors[motor_id].writeMicroseconds(control_signal);
         say_motor(motor_id, throttle);
@@ -157,7 +157,7 @@ void handle_command(Commands command, uint8_t *buffer)
       uint8_t servo_id = buffer[0];
       if (servo_id < NUM_MOTORS)
       {
-        int16_t microseconds = (buffer[1] << 8) | buffer[2];
+        int16_t microseconds = (((int16_t) buffer[1]) << 8) | buffer[2];
         servos[servo_id].writeMicroseconds(microseconds);
         say_servo(servo_id, microseconds);
         break;
