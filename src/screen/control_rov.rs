@@ -139,18 +139,18 @@ impl Screen for RovControl {
         use std::io::{stdout, Write};
         let _ = stdout().flush();
 
-        engine.renderer.set_draw_color(Color::RGB(255, 128, 128));
-        engine.renderer.clear();
+        Ok(Trans::None)
+    }
 
-        engine.renderer.set_draw_color(Color::RGB(255, 255, 255));
-
+    fn render(&mut self, engine: &mut Engine, delta: f64) -> Result<()> {
         let rect = (30, 450, 70, 70).into();
         if self.mock_rov.robot_is_on {
             engine.renderer.fill_rect(rect).unwrap()
         } else {
             engine.renderer.draw_rect(rect).unwrap()
         }
-        draw_text(&mut engine.renderer, &engine.font, "Master", [30, 510]);
+        use rusttype::Scale;
+        engine.queue_text(30.0, 510.0, Scale::uniform(64.0), "Master");
 
         let rect = (120, 450, 50, 50).into();
         if self.mock_rov.light_relay {
@@ -158,18 +158,13 @@ impl Screen for RovControl {
         } else {
             engine.renderer.draw_rect(rect).unwrap()
         }
-        draw_text_ext(&mut engine.renderer,
-                      &engine.font,
-                      "Lights",
-                      (120, 500, 50, 30).into());
+        engine.queue_text(120.0, 500.0, Scale::uniform(32.0), "Lights");
 
         for renderable in self.renderables.iter() {
             renderable.render(&self.mock_rov, engine);
         }
 
-        engine.renderer.present();
-
-        Ok(Trans::None)
+        Ok(())
     }
 }
 

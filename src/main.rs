@@ -25,6 +25,7 @@ extern crate slog_json;
 #[macro_use]
 extern crate slog_scope;
 extern crate rusttype;
+extern crate unicode_normalization;
 
 pub mod errors;
 mod rov;
@@ -132,6 +133,7 @@ fn run() -> Result<()> {
         font: font,
         rfont: rfont,
         cache: cache,
+        glyphs: vec![],
         cache_texture: cache_texture,
         config: config,
     };
@@ -154,6 +156,15 @@ fn run() -> Result<()> {
         prev_time = ::std::time::Instant::now();
 
         let trans = screen.update(&mut engine, delta).chain_err(|| "Failed to update screen")?;
+
+        use sdl2::pixels::Color;
+        engine.renderer.set_draw_color(Color::RGB(0, 0, 0));
+        engine.renderer.clear();
+        engine.renderer.set_draw_color(Color::RGB(255, 255, 255));
+        screen.render(&mut engine, delta).chain_err(|| "Failed to render screen")?;
+        engine.render_text();
+        engine.renderer.present();
+
         let current_screen = match trans {
             screen::Trans::Quit => break,
             screen::Trans::None => screen,
