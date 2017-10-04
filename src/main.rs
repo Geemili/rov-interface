@@ -2,7 +2,6 @@
 #![recursion_limit = "1024"]
 
 extern crate sdl2;
-extern crate sdl2_ttf;
 #[macro_use]
 extern crate fomat_macros;
 #[macro_use]
@@ -90,9 +89,6 @@ fn run() -> Result<()> {
     let event_pump = sdl_context.event_pump()
         .map_err(|msg| Error::from_kind(ErrorKind::SdlMsg(msg)))
         .chain_err(|| "Failed to get event pump")?;
-    let ttf_context =
-        sdl2_ttf::init().map_err(|err| Error::from_kind(ErrorKind::SdlMsg(format!("{:?}", err))))
-            .chain_err(|| "Failed to get font context")?;
 
     let window = video.window("ROV Interface", 800, 600)
         .position_centered()

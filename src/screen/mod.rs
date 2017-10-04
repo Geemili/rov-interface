@@ -18,7 +18,6 @@ pub trait Screen {
 
 use sdl2::EventPump;
 use sdl2::render::{Renderer, Texture};
-use sdl2_ttf::Font as SdlFont;
 use rusttype::{Font, PositionedGlyph};
 use rusttype::gpu_cache::Cache;
 use gilrs;

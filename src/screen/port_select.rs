@@ -3,7 +3,6 @@ const TIME_BETWEEN_POLLING_PORTS_MS: i64 = 1_000;
 
 use time::{PreciseTime, Duration};
 use serialport;
-use util::draw_text;
 use screen::{Engine, Screen, Trans};
 use screen::control_rov::RovControl;
 use rov::Rov;

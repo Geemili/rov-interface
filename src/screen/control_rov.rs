@@ -3,8 +3,6 @@ use rov::Rov;
 use mock::MockRov;
 use screen::{Engine, Screen, Trans};
 use time::{PreciseTime, Duration};
-use sdl2::pixels::Color;
-use util::{draw_text, draw_text_ext};
 use control::Control;
 use ::errors::*;
 
