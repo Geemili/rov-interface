@@ -95,23 +95,22 @@ impl Screen for PortSelect {
     }
 
     fn render(&mut self, engine: &mut Engine, delta: f64) -> Result<()> {
-        let offset_x = 64;
-        let height = 64;
-        let mut y = 0;
+        let offset_x = 64.0;
+        let height = 64.0;
+        let mut y = 0.0;
 
         for port in self.ports.iter() {
-            engine.queue_text(offset_x as f32, y as f32,
-                             ::rusttype::Scale::uniform(height as f32),
+            engine.queue_text(offset_x, y,
+                             ::rusttype::Scale::uniform(height),
                              &port.port_name);
             y += height;
         }
 
 
         if self.ports.len() > 0 {
-            draw_text(&mut engine.renderer,
-                      &engine.font,
-                      ">",
-                      [0, self.selected as i32 * height]);
+            engine.queue_text(0.0, self.selected as f32 * height,
+                             ::rusttype::Scale::uniform(height),
+                             ">");
         }
 
 

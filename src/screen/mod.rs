@@ -28,7 +28,6 @@ pub struct Engine<'renderer> {
     pub event_pump: EventPump,
     pub controllers: gilrs::Gilrs,
     pub renderer: Renderer<'renderer>,
-    pub font: SdlFont<'renderer>,
     pub rfont: Font<'renderer>,
     pub cache: Cache,
     pub glyphs: Vec<PositionedGlyph<'renderer>>,
@@ -72,10 +71,11 @@ impl<'a> Engine<'a> {
                           let mut pixel_data = vec![];
                           // Assuming the cache texture is in RGBA8888
                           for p in data {
-                              pixel_data.push(0xFF);
-                              pixel_data.push(0xFF);
-                              pixel_data.push(0xFF);
+                              let fill = 0xFF;
                               pixel_data.push(*p);
+                              pixel_data.push(fill);
+                              pixel_data.push(fill);
+                              pixel_data.push(fill);
                           }
                           to_cache.push((rect, pixel_data));
         }).expect("render_text queue character");

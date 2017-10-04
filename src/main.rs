@@ -37,6 +37,7 @@ mod config;
 
 use errors::*;
 use rusttype::gpu_cache::Cache;
+use sdl2::render::BlendMode;
 
 fn main() {
     use slog::Drain;
@@ -99,10 +100,6 @@ fn run() -> Result<()> {
         .build()
         .chain_err(|| "Failed to build SDL window")?;
 
-    let font = ttf_context.load_font(Path::new("assets/fonts/NotoSans/NotoSans-Regular.ttf"), 64)
-        .map_err(|font_error| Error::from_kind(ErrorKind::SdlMsg(format!("{:?}", font_error))))
-        .chain_err(|| "Failed to load font")?;
-
     let rfont = load_font().chain_err(|| "Failed to load r font")?;
 
     let renderer =
@@ -123,14 +120,14 @@ fn run() -> Result<()> {
     use sdl2::pixels::PixelFormatEnum;
     const PIXEL_FORMAT: PixelFormatEnum = PixelFormatEnum::RGBA8888;
 
-    let cache_texture = renderer.create_texture_target(PIXEL_FORMAT, cache_width, cache_height)
+    let mut cache_texture = renderer.create_texture_target(PIXEL_FORMAT, cache_width, cache_height)
         .chain_err(|| "Failed to create texture for font cache")?;
+    cache_texture.set_blend_mode(BlendMode::Blend);
 
     let mut engine = screen::Engine {
         event_pump: event_pump,
         controllers: gilrs,
         renderer: renderer,
-        font: font,
         rfont: rfont,
         cache: cache,
         glyphs: vec![],
@@ -159,6 +156,7 @@ fn run() -> Result<()> {
 
         use sdl2::pixels::Color;
         engine.renderer.set_draw_color(Color::RGB(0, 0, 0));
+        engine.renderer.set_blend_mode(BlendMode::Blend);
         engine.renderer.clear();
         engine.renderer.set_draw_color(Color::RGB(255, 255, 255));
         screen.render(&mut engine, delta).chain_err(|| "Failed to render screen")?;
