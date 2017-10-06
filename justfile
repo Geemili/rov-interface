@@ -26,6 +26,9 @@ run: build-app
 upload: build-driver
     pio run --project-dir {{pio-dir}} --target upload --environment promini
 
+upload-uno: build-driver
+    pio run --project-dir {{pio-dir}} --target upload --environment uno
+
 publish: build-release
     mkdir -pf {{out}}/dist
     cp binaries {{out}}/dist/

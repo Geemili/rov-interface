@@ -102,7 +102,6 @@ impl Screen for RovControl {
             if let Some((_id, gamepad)) = engine.controllers.gamepads().next() {
                 let gamepad_state = gamepad.state();
                 if &self.prev_gamepad_state != gamepad_state {
-                    trace!("Gamepad state"; "gamepad_state" => format!("{:?}", gamepad_state));
                     self.prev_gamepad_state = gamepad_state.clone();
                 }
                 let mut commands = vec![];
@@ -112,7 +111,6 @@ impl Screen for RovControl {
                 }
 
                 for command in commands.iter() {
-                    trace!("Sending command"; "command" => fomat!([command]));
                     self.rov.send_command(command.clone()).chain_err(|| "Failed to update rov")?;
                 }
 
@@ -143,18 +141,18 @@ impl Screen for RovControl {
     fn render(&mut self, engine: &mut Engine, delta: f64) -> Result<()> {
         let rect = (30, 450, 70, 70).into();
         if self.mock_rov.robot_is_on {
-            engine.renderer.fill_rect(rect).unwrap()
+            engine.canvas.fill_rect(rect).unwrap()
         } else {
-            engine.renderer.draw_rect(rect).unwrap()
+            engine.canvas.draw_rect(rect).unwrap()
         }
         use rusttype::Scale;
         engine.queue_text(30.0, 510.0, Scale::uniform(64.0), "Master");
 
         let rect = (120, 450, 50, 50).into();
         if self.mock_rov.light_relay {
-            engine.renderer.fill_rect(rect).unwrap()
+            engine.canvas.fill_rect(rect).unwrap()
         } else {
-            engine.renderer.draw_rect(rect).unwrap()
+            engine.canvas.draw_rect(rect).unwrap()
         }
         engine.queue_text(120.0, 500.0, Scale::uniform(32.0), "Lights");
 
@@ -203,9 +201,9 @@ impl Renderable for MotorRenderable {
         let motor_end = vec2_scale(motor_direction, amount);
         let motor_end = vec2_add(motor_start, motor_end);
 
-        engine.renderer
-            .draw_line((motor_start[0] as i32, motor_start[1] as i32).into(),
-                       (motor_end[0] as i32, motor_end[1] as i32).into())
+        engine.canvas
+            .draw_line((motor_start[0] as i32, motor_start[1] as i32),
+                       (motor_end[0] as i32, motor_end[1] as i32))
             .unwrap();
     }
 }
@@ -246,9 +244,9 @@ impl Renderable for ServoRenderable {
         let servo_end = vec2_scale(servo_direction, amount);
         let servo_end = vec2_add(self.min_pos, servo_end);
 
-        engine.renderer
-            .draw_line((servo_start[0] as i32, servo_start[1] as i32).into(),
-                       (servo_end[0] as i32, servo_end[1] as i32).into())
+        engine.canvas
+            .draw_line((servo_start[0] as i32, servo_start[1] as i32),
+                       (servo_end[0] as i32, servo_end[1] as i32))
             .unwrap();
     }
 }
@@ -283,7 +281,7 @@ impl Renderable for DualServoRenderable {
         let y = y * (self.max_pos[1] - self.min_pos[1]) + self.min_pos[1];
 
         let rect = (x as i32 - 5, y as i32 - 5, 10, 10).into();
-        engine.renderer.fill_rect(rect).unwrap();
+        engine.canvas.fill_rect(Some(rect)).unwrap();
     }
 }
 
@@ -302,7 +300,7 @@ use rusttype::Scale;
 impl Renderable for CompassRenderable {
     fn render(&self, mock: &MockRov, engine: &mut Engine) {
         let rect = (self.top_left[0], self.top_left[1], 200, 200).into();
-        engine.renderer.draw_rect(rect).unwrap();
+        engine.canvas.draw_rect(rect).unwrap();
 
         let x = self.top_left[0] as f32;
         let y = self.top_left[1] as f32;

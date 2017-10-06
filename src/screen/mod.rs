@@ -17,20 +17,20 @@ pub trait Screen {
 }
 
 use sdl2::EventPump;
-use sdl2::render::{Renderer, Texture};
+use sdl2::render::{WindowCanvas, Texture};
 use rusttype::{Font, PositionedGlyph};
 use rusttype::gpu_cache::Cache;
 use gilrs;
 use config::Config;
 
-pub struct Engine<'renderer> {
+pub struct Engine<'app> {
     pub event_pump: EventPump,
     pub controllers: gilrs::Gilrs,
-    pub renderer: Renderer<'renderer>,
-    pub rfont: Font<'renderer>,
+    pub canvas: WindowCanvas,
+    pub rfont: Font<'app>,
     pub cache: Cache,
-    pub glyphs: Vec<PositionedGlyph<'renderer>>,
-    pub cache_texture: Texture,
+    pub glyphs: Vec<PositionedGlyph<'app>>,
+    pub cache_texture: Texture<'app>,
     pub config: Config,
 }
 
@@ -104,7 +104,7 @@ impl<'a> Engine<'a> {
                     dest.min.y as i32,
                     dest.width() as u32,
                     dest.height() as u32);
-                self.renderer.copy(
+                self.canvas.copy(
                     &self.cache_texture,
                     Some(cache_rect),
                     Some(dest_rect))

@@ -98,8 +98,10 @@ fn run() -> Result<()> {
 
     let rfont = load_font().chain_err(|| "Failed to load r font")?;
 
-    let renderer =
-        window.renderer().accelerated().build().chain_err(|| "Failed to accelerate renderer")?;
+    let canvas = window.into_canvas()
+        .present_vsync()
+        .accelerated()
+        .build().chain_err(|| "Failed to accelerate canvas")?;
 
     let config = match util::load_config_from_file("config.toml") {
         Ok(config) => config,
@@ -116,14 +118,16 @@ fn run() -> Result<()> {
     use sdl2::pixels::PixelFormatEnum;
     const PIXEL_FORMAT: PixelFormatEnum = PixelFormatEnum::RGBA8888;
 
-    let mut cache_texture = renderer.create_texture_target(PIXEL_FORMAT, cache_width, cache_height)
+    let texture_creator = canvas.texture_creator();
+
+    let mut cache_texture = texture_creator.create_texture_target(PIXEL_FORMAT, cache_width, cache_height)
         .chain_err(|| "Failed to create texture for font cache")?;
     cache_texture.set_blend_mode(BlendMode::Blend);
 
     let mut engine = screen::Engine {
         event_pump: event_pump,
         controllers: gilrs,
-        renderer: renderer,
+        canvas: canvas,
         rfont: rfont,
         cache: cache,
         glyphs: vec![],
@@ -151,13 +155,13 @@ fn run() -> Result<()> {
         let trans = screen.update(&mut engine, delta).chain_err(|| "Failed to update screen")?;
 
         use sdl2::pixels::Color;
-        engine.renderer.set_draw_color(Color::RGB(0, 0, 0));
-        engine.renderer.set_blend_mode(BlendMode::Blend);
-        engine.renderer.clear();
-        engine.renderer.set_draw_color(Color::RGB(255, 255, 255));
+        engine.canvas.set_draw_color(Color::RGB(0, 0, 0));
+        engine.canvas.set_blend_mode(BlendMode::Blend);
+        engine.canvas.clear();
+        engine.canvas.set_draw_color(Color::RGB(255, 255, 255));
         screen.render(&mut engine, delta).chain_err(|| "Failed to render screen")?;
         engine.render_text();
-        engine.renderer.present();
+        engine.canvas.present();
 
         let current_screen = match trans {
             screen::Trans::Quit => break,
