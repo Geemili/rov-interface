@@ -3,8 +3,6 @@ use rov::Rov;
 use mock::MockRov;
 use screen::{Engine, Screen, Trans};
 use time::{PreciseTime, Duration};
-use sdl2::pixels::Color;
-use util::{draw_text, draw_text_ext};
 use control::Control;
 use ::errors::*;
 
@@ -104,7 +102,6 @@ impl Screen for RovControl {
             if let Some((_id, gamepad)) = engine.controllers.gamepads().next() {
                 let gamepad_state = gamepad.state();
                 if &self.prev_gamepad_state != gamepad_state {
-                    trace!("Gamepad state"; "gamepad_state" => format!("{:?}", gamepad_state));
                     self.prev_gamepad_state = gamepad_state.clone();
                 }
                 let mut commands = vec![];
@@ -114,7 +111,6 @@ impl Screen for RovControl {
                 }
 
                 for command in commands.iter() {
-                    trace!("Sending command"; "command" => fomat!([command]));
                     self.rov.send_command(command.clone()).chain_err(|| "Failed to update rov")?;
                 }
 
@@ -125,7 +121,6 @@ impl Screen for RovControl {
         let responses = self.rov.responses();
         self.mock_rov.apply_responses(&responses);
         for r in responses {
-            trace!("Received response"; "response" => fomat!([r]));
             use rov::RovResponse;
             match r {
                 RovResponse::NoI2c => info!("No I2C devices found"),
@@ -140,37 +135,32 @@ impl Screen for RovControl {
         use std::io::{stdout, Write};
         let _ = stdout().flush();
 
-        engine.renderer.set_draw_color(Color::RGB(255, 128, 128));
-        engine.renderer.clear();
+        Ok(Trans::None)
+    }
 
-        engine.renderer.set_draw_color(Color::RGB(255, 255, 255));
-
+    fn render(&mut self, engine: &mut Engine, delta: f64) -> Result<()> {
         let rect = (30, 450, 70, 70).into();
         if self.mock_rov.robot_is_on {
-            engine.renderer.fill_rect(rect).unwrap()
+            engine.canvas.fill_rect(rect).unwrap()
         } else {
-            engine.renderer.draw_rect(rect).unwrap()
+            engine.canvas.draw_rect(rect).unwrap()
         }
-        draw_text(&mut engine.renderer, &engine.font, "Master", [30, 510]);
+        use rusttype::Scale;
+        engine.queue_text(30.0, 510.0, Scale::uniform(64.0), "Master");
 
         let rect = (120, 450, 50, 50).into();
         if self.mock_rov.light_relay {
-            engine.renderer.fill_rect(rect).unwrap()
+            engine.canvas.fill_rect(rect).unwrap()
         } else {
-            engine.renderer.draw_rect(rect).unwrap()
+            engine.canvas.draw_rect(rect).unwrap()
         }
-        draw_text_ext(&mut engine.renderer,
-                      &engine.font,
-                      "Lights",
-                      (120, 500, 50, 30).into());
+        engine.queue_text(120.0, 500.0, Scale::uniform(32.0), "Lights");
 
         for renderable in self.renderables.iter() {
             renderable.render(&self.mock_rov, engine);
         }
 
-        engine.renderer.present();
-
-        Ok(Trans::None)
+        Ok(())
     }
 }
 
@@ -211,9 +201,9 @@ impl Renderable for MotorRenderable {
         let motor_end = vec2_scale(motor_direction, amount);
         let motor_end = vec2_add(motor_start, motor_end);
 
-        engine.renderer
-            .draw_line((motor_start[0] as i32, motor_start[1] as i32).into(),
-                       (motor_end[0] as i32, motor_end[1] as i32).into())
+        engine.canvas
+            .draw_line((motor_start[0] as i32, motor_start[1] as i32),
+                       (motor_end[0] as i32, motor_end[1] as i32))
             .unwrap();
     }
 }
@@ -254,9 +244,9 @@ impl Renderable for ServoRenderable {
         let servo_end = vec2_scale(servo_direction, amount);
         let servo_end = vec2_add(self.min_pos, servo_end);
 
-        engine.renderer
-            .draw_line((servo_start[0] as i32, servo_start[1] as i32).into(),
-                       (servo_end[0] as i32, servo_end[1] as i32).into())
+        engine.canvas
+            .draw_line((servo_start[0] as i32, servo_start[1] as i32),
+                       (servo_end[0] as i32, servo_end[1] as i32))
             .unwrap();
     }
 }
@@ -291,7 +281,7 @@ impl Renderable for DualServoRenderable {
         let y = y * (self.max_pos[1] - self.min_pos[1]) + self.min_pos[1];
 
         let rect = (x as i32 - 5, y as i32 - 5, 10, 10).into();
-        engine.renderer.fill_rect(rect).unwrap();
+        engine.canvas.fill_rect(Some(rect)).unwrap();
     }
 }
 
@@ -305,35 +295,29 @@ impl CompassRenderable {
     }
 }
 
+use rusttype::Scale;
+
 impl Renderable for CompassRenderable {
     fn render(&self, mock: &MockRov, engine: &mut Engine) {
         let rect = (self.top_left[0], self.top_left[1], 200, 200).into();
-        engine.renderer.draw_rect(rect).unwrap();
+        engine.canvas.draw_rect(rect).unwrap();
 
-        let text_rect = (self.top_left[0] + 10, self.top_left[1] + 10, 180, 20).into();
-        draw_text_ext(&mut engine.renderer, &engine.font, "Compass", text_rect);
+        let x = self.top_left[0] as f32;
+        let y = self.top_left[1] as f32;
+
+        engine.queue_text(x, y - 10.0, Scale::uniform(50.0), "Compass");
 
         if mock.compass_enabled {
-            let text_rect = (self.top_left[0] + 10, self.top_left[1] + 30, 25, 20).into();
-            draw_text_ext(&mut engine.renderer, &engine.font, "X:", text_rect);
-            let x_string = format!("{}", mock.compass_orientation[0]);
-            let text_rect = (self.top_left[0] + 35, self.top_left[1] + 30, 155, 20).into();
-            draw_text_ext(&mut engine.renderer, &engine.font, &x_string, text_rect);
+            let x_string = format!("X: {}", (mock.compass_orientation[0] as f32) / 100.0);
+            engine.queue_text(x + 10.0, y + 40.0, Scale::uniform(32.0), &x_string);
 
-            let text_rect = (self.top_left[0] + 10, self.top_left[1] + 50, 25, 20).into();
-            draw_text_ext(&mut engine.renderer, &engine.font, "Y:", text_rect);
-            let x_string = format!("{}", mock.compass_orientation[1]);
-            let text_rect = (self.top_left[0] + 35, self.top_left[1] + 50, 155, 20).into();
-            draw_text_ext(&mut engine.renderer, &engine.font, &x_string, text_rect);
+            let y_string = format!("Y: {}", (mock.compass_orientation[1] as f32) / 100.0);
+            engine.queue_text(x + 10.0, y + 72.0, Scale::uniform(32.0), &y_string);
 
-            let text_rect = (self.top_left[0] + 10, self.top_left[1] + 80, 25, 20).into();
-            draw_text_ext(&mut engine.renderer, &engine.font, "Z:", text_rect);
-            let x_string = format!("{}", mock.compass_orientation[0]);
-            let text_rect = (self.top_left[0] + 35, self.top_left[1] + 80, 155, 20).into();
-            draw_text_ext(&mut engine.renderer, &engine.font, &x_string, text_rect);
+            let z_string = format!("Z: {}", (mock.compass_orientation[2] as f32) / 100.0);
+            engine.queue_text(x + 10.0, y + 104.0, Scale::uniform(32.0), &z_string);
         } else {
-            let text_rect = (self.top_left[0] + 10, self.top_left[1] + 50, 180, 20).into();
-            draw_text_ext(&mut engine.renderer, &engine.font, "Not Found", text_rect);
+            engine.queue_text(x + 10.0, y + 50.0, Scale::uniform(32.0), "Not Found");
         }
     }
 }

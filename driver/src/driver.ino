@@ -37,7 +37,7 @@ Servo motors[NUM_MOTORS];
 Servo servos[NUM_SERVOS];
 bool robot_is_on;
 
-BNO055 bno_compass = BNO055(0, 55);
+BNO055 bno_compass = BNO055(55);
 bool compass_enabled;
 
 void setup()
@@ -49,6 +49,7 @@ void setup()
       say_compass_disabled();
   }
   master_on();
+  bno_compass.setExtCrystalUse(true);
 }
 
 void loop()
@@ -125,7 +126,7 @@ void handle_command(Commands command, uint8_t *buffer)
       uint8_t motor_id = buffer[0];
       if (motor_id < NUM_MOTORS)
       {
-        int16_t throttle = (buffer[1] << 8) | buffer[0];
+        int16_t throttle = (((int16_t)buffer[1]) << 8) | buffer[2];
         int16_t control_signal = map(throttle, INT16_MIN, INT16_MAX, MIN_CONTROL_SIGNAL, MAX_CONTROL_SIGNAL);
         motors[motor_id].writeMicroseconds(control_signal);
         say_motor(motor_id, throttle);
@@ -156,7 +157,7 @@ void handle_command(Commands command, uint8_t *buffer)
       uint8_t servo_id = buffer[0];
       if (servo_id < NUM_MOTORS)
       {
-        int16_t microseconds = (buffer[1] << 8) | buffer[2];
+        int16_t microseconds = (((int16_t) buffer[1]) << 8) | buffer[2];
         servos[servo_id].writeMicroseconds(microseconds);
         say_servo(servo_id, microseconds);
         break;
@@ -233,16 +234,13 @@ void master_off() {
 void update_compass() {
     if (!compass_enabled) return;
 
-    uint8_t compass_buffer[6];
-    memset(compass_buffer, 0, 6);
-    bno_compass.readLen(BNO055::BNO055_EULER_H_LSB_ADDR, compass_buffer, 6);
+    imu::Vector<3> euler = bno_compass.getVector(BNO055::VECTOR_EULER);
 
-    int16_t x, y, z;
-
-    x = ((int16_t)compass_buffer[0]) | (((int16_t)compass_buffer[1]) << 8);
-    y = ((int16_t)compass_buffer[2]) | (((int16_t)compass_buffer[3]) << 8);
-    z = ((int16_t)compass_buffer[4]) | (((int16_t)compass_buffer[5]) << 8);
-
-    say_compass_orientation(x, y, z);
+    int16_t numbers[] = {
+        (int16_t) (euler.x() * 100),
+        (int16_t) (euler.y() * 100),
+        (int16_t) (euler.z() * 100),
+    };
+    say_compass_orientation(numbers[0], numbers[1], numbers[2]);
 }
 

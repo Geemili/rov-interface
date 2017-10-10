@@ -2,7 +2,6 @@
 #![recursion_limit = "1024"]
 
 extern crate sdl2;
-extern crate sdl2_ttf;
 #[macro_use]
 extern crate fomat_macros;
 #[macro_use]
@@ -17,13 +16,15 @@ extern crate serde;
 extern crate toml;
 #[macro_use(o, kv, slog_b, slog_kv,
            slog_record, slog_record_static,
-           slog_log, slog_info, slog_error, slog_trace)]
+           slog_log, slog_info, slog_error, slog_trace, slog_warn)]
 extern crate slog;
 extern crate slog_term;
 extern crate slog_async;
 extern crate slog_json;
 #[macro_use]
 extern crate slog_scope;
+extern crate rusttype;
+extern crate unicode_normalization;
 
 pub mod errors;
 mod rov;
@@ -34,6 +35,8 @@ mod control;
 mod config;
 
 use errors::*;
+use rusttype::gpu_cache::Cache;
+use sdl2::render::BlendMode;
 
 fn main() {
     use slog::Drain;
@@ -86,9 +89,6 @@ fn run() -> Result<()> {
     let event_pump = sdl_context.event_pump()
         .map_err(|msg| Error::from_kind(ErrorKind::SdlMsg(msg)))
         .chain_err(|| "Failed to get event pump")?;
-    let ttf_context =
-        sdl2_ttf::init().map_err(|err| Error::from_kind(ErrorKind::SdlMsg(format!("{:?}", err))))
-            .chain_err(|| "Failed to get font context")?;
 
     let window = video.window("ROV Interface", 800, 600)
         .position_centered()
@@ -96,12 +96,12 @@ fn run() -> Result<()> {
         .build()
         .chain_err(|| "Failed to build SDL window")?;
 
-    let font = ttf_context.load_font(Path::new("assets/fonts/NotoSans/NotoSans-Regular.ttf"), 64)
-        .map_err(|font_error| Error::from_kind(ErrorKind::SdlMsg(format!("{:?}", font_error))))
-        .chain_err(|| "Failed to load font")?;
+    let rfont = load_font().chain_err(|| "Failed to load r font")?;
 
-    let renderer =
-        window.renderer().accelerated().build().chain_err(|| "Failed to accelerate renderer")?;
+    let canvas = window.into_canvas()
+        .present_vsync()
+        .accelerated()
+        .build().chain_err(|| "Failed to accelerate canvas")?;
 
     let config = match util::load_config_from_file("config.toml") {
         Ok(config) => config,
@@ -112,11 +112,26 @@ fn run() -> Result<()> {
         }
     };
 
+    let (cache_width, cache_height) = (512, 512);
+    let cache = Cache::new(cache_width, cache_height, 0.1, 0.1);
+
+    use sdl2::pixels::PixelFormatEnum;
+    const PIXEL_FORMAT: PixelFormatEnum = PixelFormatEnum::RGBA8888;
+
+    let texture_creator = canvas.texture_creator();
+
+    let mut cache_texture = texture_creator.create_texture_target(PIXEL_FORMAT, cache_width, cache_height)
+        .chain_err(|| "Failed to create texture for font cache")?;
+    cache_texture.set_blend_mode(BlendMode::Blend);
+
     let mut engine = screen::Engine {
         event_pump: event_pump,
         controllers: gilrs,
-        renderer: renderer,
-        font: font,
+        canvas: canvas,
+        rfont: rfont,
+        cache: cache,
+        glyphs: vec![],
+        cache_texture: cache_texture,
         config: config,
     };
 
@@ -138,6 +153,16 @@ fn run() -> Result<()> {
         prev_time = ::std::time::Instant::now();
 
         let trans = screen.update(&mut engine, delta).chain_err(|| "Failed to update screen")?;
+
+        use sdl2::pixels::Color;
+        engine.canvas.set_draw_color(Color::RGB(0, 0, 0));
+        engine.canvas.set_blend_mode(BlendMode::Blend);
+        engine.canvas.clear();
+        engine.canvas.set_draw_color(Color::RGB(255, 255, 255));
+        screen.render(&mut engine, delta).chain_err(|| "Failed to render screen")?;
+        engine.render_text();
+        engine.canvas.present();
+
         let current_screen = match trans {
             screen::Trans::Quit => break,
             screen::Trans::None => screen,
@@ -150,4 +175,18 @@ fn run() -> Result<()> {
     }
 
     Ok(())
+}
+
+use rusttype::{FontCollection, Font};
+use std::fs::File;
+use std::io::Read;
+
+fn load_font<'a>() -> Result<Font<'a>> {
+    let path = Path::new("assets/fonts/NotoSans/NotoSans-Regular.ttf");
+    let mut file = File::open(path).chain_err(|| "Font file not found")?;
+    let mut bytes = vec![];
+    file.read_to_end(&mut bytes).chain_err(|| "Failed to read font file")?;
+    let collection = FontCollection::from_bytes(bytes);
+    collection.into_font()
+        .ok_or("File contained no fonts!".into())
 }

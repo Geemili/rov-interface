@@ -7,8 +7,7 @@ version = "0.1.2"
 error-chain = "0.10"
 fomat-macros = "0.1"
 gilrs = "0.4.2"
-sdl2 = "0.25"
-sdl2_ttf = "0.25"
+sdl2 = "0.30"
 serde = "1.0"
 serde_derive = "1.0"
 serial = "0.3"
@@ -21,6 +20,8 @@ slog-term = "2"
 time = "0.1"
 toml = "0.4"
 vecmath = "0.2"
+rusttype = "*"
+unicode-normalization = "*"
 
 [dependencies.slog]
 features = ["max_level_trace", "release_max_level_trace"]

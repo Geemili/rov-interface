@@ -40,7 +40,13 @@ impl MockRov {
                     self.motors[id as usize] = throttle;
                 }
             }
-            RovResponse::CompassOrientation { x, y, z } => self.compass_orientation = [x, y, z],
+            RovResponse::CompassOrientation { x, y, z } => {
+                self.compass_orientation = [x, y, z];
+                if !self.compass_enabled {
+                    warn!("Compass orientation received when disabled; enabling compass");
+                    self.compass_enabled = true;
+                }
+            }
             RovResponse::CompassDisabled => self.compass_enabled = false,
             RovResponse::LightsOn => self.light_relay = true,
             RovResponse::LightsOff => self.light_relay = false,

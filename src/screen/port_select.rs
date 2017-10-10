@@ -3,7 +3,6 @@ const TIME_BETWEEN_POLLING_PORTS_MS: i64 = 1_000;
 
 use time::{PreciseTime, Duration};
 use serialport;
-use util::draw_text;
 use screen::{Engine, Screen, Trans};
 use screen::control_rov::RovControl;
 use rov::Rov;
@@ -91,30 +90,29 @@ impl Screen for PortSelect {
             }
         }
 
-        engine.renderer.clear();
+        Ok(Trans::None)
+    }
 
-        let offset_x = 64;
-        let height = 64;
-        let mut y = 0;
+    fn render(&mut self, engine: &mut Engine, delta: f64) -> Result<()> {
+        let offset_x = 64.0;
+        let height = 64.0;
+        let mut y = 0.0;
 
         for port in self.ports.iter() {
-            draw_text(&mut engine.renderer,
-                      &engine.font,
-                      &port.port_name,
-                      [offset_x, y]);
+            engine.queue_text(offset_x, y,
+                             ::rusttype::Scale::uniform(height),
+                             &port.port_name);
             y += height;
         }
 
 
         if self.ports.len() > 0 {
-            draw_text(&mut engine.renderer,
-                      &engine.font,
-                      ">",
-                      [0, self.selected as i32 * height]);
+            engine.queue_text(0.0, self.selected as f32 * height,
+                             ::rusttype::Scale::uniform(height),
+                             ">");
         }
 
-        engine.renderer.present();
 
-        Ok(Trans::None)
+        Ok(())
     }
 }
