@@ -308,13 +308,13 @@ impl Renderable for CompassRenderable {
         engine.queue_text(x, y - 10.0, Scale::uniform(50.0), "Compass");
 
         if mock.compass_enabled {
-            let x_string = format!("X: {:05}", mock.compass_orientation[0]);
+            let x_string = format!("X: {}", (mock.compass_orientation[0] as f32) / 100.0);
             engine.queue_text(x + 10.0, y + 40.0, Scale::uniform(32.0), &x_string);
 
-            let y_string = format!("Y: {:05}", mock.compass_orientation[1]);
+            let y_string = format!("Y: {}", (mock.compass_orientation[1] as f32) / 100.0);
             engine.queue_text(x + 10.0, y + 72.0, Scale::uniform(32.0), &y_string);
 
-            let z_string = format!("Z: {:05}", mock.compass_orientation[2]);
+            let z_string = format!("Z: {}", (mock.compass_orientation[2] as f32) / 100.0);
             engine.queue_text(x + 10.0, y + 104.0, Scale::uniform(32.0), &z_string);
         } else {
             engine.queue_text(x + 10.0, y + 50.0, Scale::uniform(32.0), "Not Found");

@@ -44,7 +44,7 @@ void setup()
 {
   Serial.begin(115200);
   parser_state = ReceivingCommand;
-  compass_enabled = bno_compass.begin(BNO055::OPERATION_MODE_COMPASS);
+  compass_enabled = bno_compass.begin();
   if(!compass_enabled) {
       say_compass_disabled();
   }
