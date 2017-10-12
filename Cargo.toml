@@ -1,7 +1,7 @@
 [package]
 authors = ["geemili <minergeemili@gmail.com>"]
 name = "rov-interface"
-version = "0.1.2"
+version = "0.1.3"
 
 [dependencies]
 error-chain = "0.10"

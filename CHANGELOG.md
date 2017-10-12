@@ -1,9 +1,9 @@
+Version 1.3
+-----------
 
-Unreleased
-----------
+This version has a revamped text renderer and actually reads values from the
+IMU. An attempt to fix the camera servo stutters was left unfinished, as the
+stutters seemed to have resolved themselves.
 
-- [x] Got compass code working
-- [x] Fix GUI so that it will display compass values
-- [x] Remove debug statement for ROV response
-- [ ] Improve text rendering
-- [ ] Revamp compass communication
+- Enable BNO055's external crystal
+- Improve text rendering so that compass values are easy to see
